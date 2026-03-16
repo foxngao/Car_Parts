@@ -148,3 +148,54 @@ CREATE TABLE IF NOT EXISTS order_items (
   FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
   FOREIGN KEY (part_id) REFERENCES parts(id) ON DELETE CASCADE
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Bảng ánh xạ VIN prefix → brand (WMI: 3 ký tự đầu)
+CREATE TABLE vin_wmi_mappings (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  wmi_code VARCHAR(3) NOT NULL UNIQUE,  -- 3 ký tự đầu VIN
+  brand_id INT NOT NULL,
+  country VARCHAR(100),
+  FOREIGN KEY (brand_id) REFERENCES brands(id) ON DELETE CASCADE
+);
+
+-- Lịch sử tìm kiếm
+CREATE TABLE search_history (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  search_type ENUM('keyword','vin','image','filter') DEFAULT 'keyword',
+  query VARCHAR(500) NOT NULL,
+  filters JSON DEFAULT NULL,
+  results_count INT DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_user_created (user_id, created_at)
+);
+
+-- ========== SPECIFICATIONS ==========
+
+CREATE TABLE IF NOT EXISTS part_specifications (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  part_id INT NOT NULL,
+  spec_name NVARCHAR(100) NOT NULL,
+  spec_value NVARCHAR(255) NOT NULL,
+  spec_unit NVARCHAR(50) DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (part_id) REFERENCES parts(id) ON DELETE CASCADE,
+  INDEX idx_part_spec (part_id)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- ========== REVIEWS ==========
+
+CREATE TABLE IF NOT EXISTS part_reviews (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  part_id INT NOT NULL,
+  user_id INT NOT NULL,
+  rating TINYINT NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  comment NVARCHAR(1000) DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (part_id) REFERENCES parts(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE KEY unique_user_part_review (user_id, part_id),
+  INDEX idx_part_rating (part_id, rating)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

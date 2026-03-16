@@ -26,6 +26,10 @@ COPY package.json ./
 COPY server.js ./
 COPY src ./src
 
+# Create uploads directory with correct permissions
+RUN mkdir -p /app/uploads && chown -R appuser:appgroup /app/uploads
+
+
 # Switch to non-root user
 USER appuser
 

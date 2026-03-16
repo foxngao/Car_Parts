@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 
 const app = express();
 
@@ -8,6 +9,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serve uploaded images
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Database connection (triggers connection test)
 require('./src/config/db');
@@ -24,6 +28,11 @@ app.use('/api/v1/cart', require('./src/routes/cart.routes'));
 app.use('/api/v1/orders', require('./src/routes/order.routes'));
 app.use('/api/v1/admin', require('./src/routes/admin.routes'));
 app.use('/api/v1/notifications', require('./src/routes/notification.routes'));
+app.use('/api/v1/vin', require('./src/routes/vin.routes'));
+app.use('/api/v1/search', require('./src/routes/imageSearch.routes'));
+app.use('/api/v1/search-history', require('./src/routes/searchHistory.routes'));
+app.use('/api/v1/compare', require('./src/routes/compare.routes'));
+app.use('/api/v1', require('./src/routes/review.routes'));
 
 // Health check
 app.get('/', (req, res) => {

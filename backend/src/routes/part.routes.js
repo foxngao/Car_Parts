@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { searchParts, getPartById } = require('../controllers/part.controller');
+const { searchParts, getSuggestions, getPartById } = require('../controllers/part.controller');
+
+// GET /api/v1/parts/suggestions?q=... (phải đặt trước /:id)
+router.get('/suggestions', getSuggestions);
 
 // GET /api/v1/parts/search
 router.get('/search', searchParts);

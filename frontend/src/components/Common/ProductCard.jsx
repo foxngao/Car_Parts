@@ -1,11 +1,23 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingCart, ChevronRight } from 'lucide-react';
+import { ShoppingCart, ChevronRight, GitCompareArrows } from 'lucide-react';
 import { formatCurrency } from '../../utils/formatters';
 import cartApi from '../../api/cartApi';
 import toast from 'react-hot-toast';
 
 const ProductCard = ({ part, onAddToCart }) => {
+  const [isCompared, setIsCompared] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('compareIds');
+    if (saved) {
+      try {
+        const ids = JSON.parse(saved);
+        setIsCompared(ids.includes(part.id));
+      } catch (e) {}
+    }
+  }, [part.id]);
+
   const handleAddToCart = async (e) => {
     e.preventDefault();
     try {
@@ -15,6 +27,45 @@ const ProductCard = ({ part, onAddToCart }) => {
     } catch (error) {
       toast.error(error.response?.data?.message || 'Thêm vào giỏ thất bại');
     }
+  };
+
+  const toggleCompare = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const saved = localStorage.getItem('compareIds');
+    let ids = [];
+    try { ids = saved ? JSON.parse(saved) : []; } catch (e) {}
+    
+    if (isCompared) {
+      ids = ids.filter(id => id !== part.id);
+      if (ids.length === 0) {
+        localStorage.removeItem('compareCategoryId');
+      }
+      toast.success('Đã bỏ khỏi so sánh');
+    } else {
+      if (ids.length >= 4) {
+        toast.error('Tối đa 4 sản phẩm so sánh');
+        return;
+      }
+
+      const compareCategoryId = localStorage.getItem('compareCategoryId');
+      if (ids.length > 0 && compareCategoryId && Number(compareCategoryId) !== part.category_id) {
+        toast.error('Chỉ có thể so sánh các sản phẩm cùng danh mục');
+        return;
+      }
+
+      if (ids.length === 0) {
+        localStorage.setItem('compareCategoryId', part.category_id.toString());
+      }
+
+      ids.push(part.id);
+      toast.success('Đã thêm vào so sánh');
+    }
+    
+    localStorage.setItem('compareIds', JSON.stringify(ids));
+    setIsCompared(!isCompared);
+    // Dispatch event để Header cập nhật badge
+    window.dispatchEvent(new Event('compareUpdate'));
   };
 
   return (
@@ -31,6 +82,18 @@ const ProductCard = ({ part, onAddToCart }) => {
               {part.category_name}
             </span>
           </div>
+          {/* Compare toggle */}
+          <button
+            onClick={toggleCompare}
+            className={`absolute top-4 right-4 p-2 rounded-xl shadow-sm transition-all ${
+              isCompared 
+                ? 'bg-blue-600 text-white' 
+                : 'bg-white/90 backdrop-blur-sm text-slate-500 hover:text-blue-600'
+            }`}
+            title={isCompared ? 'Bỏ so sánh' : 'Thêm so sánh'}
+          >
+            <GitCompareArrows size={16} />
+          </button>
           {part.stock_quantity <= 0 && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
               <span className="bg-red-500 text-white px-4 py-2 rounded-xl font-bold">HẾT HÀNG</span>
