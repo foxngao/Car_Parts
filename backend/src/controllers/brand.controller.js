@@ -1,9 +1,10 @@
-const db = require('../config/db');
+const brandModel = require('../models/brand.model');
+const modelModel = require('../models/model.model');
 
 // GET /api/v1/brands
 const getAllBrands = async (req, res) => {
   try {
-    const [brands] = await db.query('SELECT * FROM brands ORDER BY name');
+    const brands = await brandModel.findAll();
     res.json({ success: true, data: brands });
   } catch (error) {
     console.error('Get brands error:', error);
@@ -14,10 +15,7 @@ const getAllBrands = async (req, res) => {
 // GET /api/v1/brands/:id/models
 const getModelsByBrand = async (req, res) => {
   try {
-    const [models] = await db.query(
-      'SELECT * FROM car_models WHERE brand_id = ? ORDER BY name',
-      [req.params.id]
-    );
+    const models = await modelModel.findByBrandId(req.params.id);
     res.json({ success: true, data: models });
   } catch (error) {
     console.error('Get models by brand error:', error);
@@ -29,10 +27,7 @@ const getModelsByBrand = async (req, res) => {
 const createBrand = async (req, res) => {
   try {
     const { name, country } = req.body;
-    const [result] = await db.query(
-      'INSERT INTO brands (name, country) VALUES (?, ?)',
-      [name, country]
-    );
+    const result = await brandModel.createBrand({ name, country });
     res.status(201).json({
       success: true,
       message: 'Brand created',
@@ -51,10 +46,7 @@ const createBrand = async (req, res) => {
 const updateBrand = async (req, res) => {
   try {
     const { name, country } = req.body;
-    const [result] = await db.query(
-      'UPDATE brands SET name = ?, country = ? WHERE id = ?',
-      [name, country, req.params.id]
-    );
+    const result = await brandModel.updateBrandById(req.params.id, { name, country });
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, message: 'Brand not found' });
     }
@@ -68,7 +60,7 @@ const updateBrand = async (req, res) => {
 // DELETE /api/v1/admin/brands/:id
 const deleteBrand = async (req, res) => {
   try {
-    const [result] = await db.query('DELETE FROM brands WHERE id = ?', [req.params.id]);
+    const result = await brandModel.deleteBrandById(req.params.id);
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, message: 'Brand not found' });
     }
