@@ -1,4 +1,5 @@
-const db = require('../config/db');
+const orderModel = require('../models/order.model');
+const notificationModel = require('../models/notification.model');
 
 // ==================== HELPER FUNCTIONS ====================
 
@@ -11,39 +12,16 @@ const formatCurrency = (amount) => {
   }).format(amount);
 };
 
-// Hàm tạo thông báo
-const createNotification = async (connection, userId, type, title, message, data = {}) => {
-  try {
-    // Đảm bảo data là object trước khi stringify
-    const safeData = data || {};
-    const jsonData = JSON.stringify(safeData);
-    
-    await connection.query(
-      `INSERT INTO notifications (user_id, type, title, message, data, is_read, created_at) 
-       VALUES (?, ?, ?, ?, ?, FALSE, NOW())`,
-      [userId, type, title, message, jsonData]
-    );
-  } catch (error) {
-    console.error('Create notification error:', error);
-  }
-};
-
 // ==================== USER ORDER FUNCTIONS ====================
 
 // POST /api/v1/orders (create order from cart)
 const createOrder = async (req, res) => {
-  const connection = await db.getConnection();
+  const connection = await orderModel.getConnection();
   try {
     await connection.beginTransaction();
 
     // Get cart items
-    const [cartItems] = await connection.query(
-      `SELECT ci.id, ci.part_id, ci.quantity, p.price, p.stock_quantity, p.name
-       FROM cart_items ci
-       JOIN parts p ON ci.part_id = p.id
-       WHERE ci.user_id = ?`,
-      [req.user.id]
-    );
+    const cartItems = await orderModel.findCartItemsForCheckout(connection, req.user.id);
 
     if (cartItems.length === 0) {
       await connection.rollback();
@@ -67,36 +45,31 @@ const createOrder = async (req, res) => {
     const totalAmount = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
     // Create order
-    const [orderResult] = await connection.query(
-      'INSERT INTO orders (user_id, total_amount, status) VALUES (?, ?, ?)',
-      [req.user.id, totalAmount, 'PENDING']
-    );
+    const orderResult = await orderModel.createOrderRecord(connection, req.user.id, totalAmount, 'PENDING');
     const orderId = orderResult.insertId;
 
     // Create order items + decrement stock
     for (const item of cartItems) {
-      await connection.query(
-        'INSERT INTO order_items (order_id, part_id, quantity, price_at_purchase) VALUES (?, ?, ?, ?)',
-        [orderId, item.part_id, item.quantity, item.price]
-      );
-      await connection.query(
-        'UPDATE parts SET stock_quantity = stock_quantity - ? WHERE id = ?',
-        [item.quantity, item.part_id]
-      );
+      await orderModel.createOrderItem(connection, orderId, item.part_id, item.quantity, item.price);
+      await orderModel.decrementPartStock(connection, item.quantity, item.part_id);
     }
 
     // Clear cart
-    await connection.query('DELETE FROM cart_items WHERE user_id = ?', [req.user.id]);
+    await orderModel.clearCartByUserId(connection, req.user.id);
 
     // Tạo thông báo cho user
-    await createNotification(
-      connection,
-      req.user.id,
-      'order_created',
-      'Đơn hàng đã được tạo',
-      `Đơn hàng #${orderId} đã được tạo thành công với tổng giá trị ${formatCurrency(totalAmount)}`,
-      { orderId }
-    );
+    try {
+      await notificationModel.createNotification(
+        connection,
+        req.user.id,
+        'order_created',
+        'Đơn hàng đã được tạo',
+        `Đơn hàng #${orderId} đã được tạo thành công với tổng giá trị ${formatCurrency(totalAmount)}`,
+        { orderId }
+      );
+    } catch (error) {
+      console.error('Create notification error:', error);
+    }
 
     await connection.commit();
     connection.release();
@@ -117,22 +90,11 @@ const createOrder = async (req, res) => {
 // GET /api/v1/orders (get user's orders)
 const getOrders = async (req, res) => {
   try {
-    const [orders] = await db.query(
-      `SELECT id, total_amount, status, order_date
-       FROM orders WHERE user_id = ?
-       ORDER BY order_date DESC`,
-      [req.user.id]
-    );
+    const orders = await orderModel.findOrdersByUserId(req.user.id);
 
     // Get items for each order
     for (let order of orders) {
-      const [items] = await db.query(
-        `SELECT oi.*, p.name as part_name, p.image_url
-         FROM order_items oi
-         JOIN parts p ON oi.part_id = p.id
-         WHERE oi.order_id = ?`,
-        [order.id]
-      );
+      const items = await orderModel.findOrderItemsByOrderId(order.id);
       order.items = items;
     }
 
@@ -146,25 +108,13 @@ const getOrders = async (req, res) => {
 // GET /api/v1/orders/:id (get order by id)
 const getOrderById = async (req, res) => {
   try {
-    const [orders] = await db.query(
-      `SELECT o.*, u.username, u.email, u.full_name, u.phone, u.address
-       FROM orders o
-       JOIN users u ON o.user_id = u.id
-       WHERE o.id = ? AND o.user_id = ?`,
-      [req.params.id, req.user.id]
-    );
+    const orders = await orderModel.findOrderByIdForUser(req.params.id, req.user.id);
 
     if (orders.length === 0) {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
-    const [items] = await db.query(
-      `SELECT oi.*, p.name as part_name, p.image_url
-       FROM order_items oi
-       JOIN parts p ON oi.part_id = p.id
-       WHERE oi.order_id = ?`,
-      [req.params.id]
-    );
+    const items = await orderModel.findOrderItemsByOrderId(req.params.id);
 
     res.json({
       success: true,
@@ -181,22 +131,11 @@ const getOrderById = async (req, res) => {
 // GET /api/v1/admin/orders - Lấy tất cả đơn hàng (Admin)
 const getAllOrders = async (req, res) => {
   try {
-    const [orders] = await db.query(
-      `SELECT o.*, u.username, u.email, u.full_name, u.phone, u.address
-       FROM orders o
-       JOIN users u ON o.user_id = u.id
-       ORDER BY o.order_date DESC`
-    );
+    const orders = await orderModel.findAllOrders();
 
     // Lấy chi tiết sản phẩm cho mỗi đơn hàng
     for (let order of orders) {
-      const [items] = await db.query(
-        `SELECT oi.*, p.name as part_name, p.image_url
-         FROM order_items oi
-         JOIN parts p ON oi.part_id = p.id
-         WHERE oi.order_id = ?`,
-        [order.id]
-      );
+      const items = await orderModel.findOrderItemsByOrderId(order.id);
       order.items = items;
     }
 
@@ -209,7 +148,7 @@ const getAllOrders = async (req, res) => {
 
 // PUT /api/v1/admin/orders/:id/status - Cập nhật trạng thái đơn hàng (Admin)
 const updateOrderStatus = async (req, res) => {
-  const connection = await db.getConnection();
+  const connection = await orderModel.getConnection();
   try {
     await connection.beginTransaction();
 
@@ -228,10 +167,7 @@ const updateOrderStatus = async (req, res) => {
     }
 
     // Kiểm tra đơn hàng tồn tại và lấy thông tin user
-    const [orders] = await connection.query(
-      'SELECT * FROM orders WHERE id = ?',
-      [id]
-    );
+    const orders = await orderModel.findOrderById(connection, id);
     
     if (orders.length === 0) {
       await connection.rollback();
@@ -246,10 +182,7 @@ const updateOrderStatus = async (req, res) => {
     const oldStatus = order.status;
 
     // Cập nhật trạng thái
-    await connection.query(
-      'UPDATE orders SET status = ?, updated_at = NOW() WHERE id = ?',
-      [status, id]
-    );
+    await orderModel.updateOrderStatusById(connection, status, id);
 
     // Tạo thông báo cho user dựa trên trạng thái mới
     let notificationType, notificationTitle, notificationMessage;
@@ -281,14 +214,18 @@ const updateOrderStatus = async (req, res) => {
         notificationMessage = `Đơn hàng #${id} đã được cập nhật trạng thái.`;
     }
 
-    await createNotification(
-      connection,
-      order.user_id,
-      notificationType,
-      notificationTitle,
-      notificationMessage,
-      { orderId: id, oldStatus, newStatus: status }
-    );
+    try {
+      await notificationModel.createNotification(
+        connection,
+        order.user_id,
+        notificationType,
+        notificationTitle,
+        notificationMessage,
+        { orderId: id, oldStatus, newStatus: status }
+      );
+    } catch (error) {
+      console.error('Create notification error:', error);
+    }
 
     // Log hoạt động
     console.log(`Order ${id} status updated from ${oldStatus} to ${status} by admin ${req.user.id}`);

@@ -16,7 +16,8 @@ import {
   Clock,
   Truck,
   Box,
-  Eye
+  Eye,
+  Wrench // Thêm icon cho dịch vụ lắp đặt
 } from 'lucide-react';
 import {
   LineChart,
@@ -51,7 +52,22 @@ const Dashboard = () => {
     setLoading(true);
     try {
       const res = await adminApi.getDashboardStats({ period });
-      setStats(res.data.data);
+      const dashboardData = res.data.data;
+      setStats(dashboardData);
+
+      // --- CHỨC NĂNG: CẢNH BÁO TỒN KHO NÂNG CAO ---
+      if (dashboardData.overview.out_of_stock > 0) {
+        toast.error(`Cảnh báo: Có ${dashboardData.overview.out_of_stock} sản phẩm đã hết hàng!`, {
+          icon: '⚠️',
+          duration: 4000
+        });
+      } else if (dashboardData.overview.total_stock < 50) { // Ví dụ ngưỡng cảnh báo tổng kho thấp
+        toast('Lượng hàng trong kho đang ở mức thấp', {
+          icon: '📦',
+        });
+      }
+      // ------------------------------------------
+
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
       toast.error('Không thể tải dữ liệu thống kê');
@@ -104,8 +120,8 @@ const Dashboard = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Tổng quan</h1>
-          <p className="text-slate-500 mt-1">Xem báo cáo và thống kê hoạt động của hệ thống</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Tổng quan hệ thống</h1>
+          <p className="text-slate-500 mt-1">Quản lý hoạt động kinh doanh và dịch vụ lắp đặt</p>
         </div>
         
         <div className="flex items-center gap-3">
@@ -137,7 +153,7 @@ const Dashboard = () => {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Doanh thu */}
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-2xl text-white">
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-2xl text-white shadow-lg shadow-blue-200">
           <div className="flex items-center justify-between mb-4">
             <DollarSign size={32} />
             <span className={`text-sm bg-white/20 px-3 py-1 rounded-full flex items-center gap-1 ${
@@ -153,20 +169,20 @@ const Dashboard = () => {
         </div>
 
         {/* Đơn hàng */}
-        <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-6 rounded-2xl text-white">
+        <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-6 rounded-2xl text-white shadow-lg shadow-orange-200">
           <div className="flex items-center justify-between mb-4">
             <ShoppingBag size={32} />
             <span className="text-sm bg-white/20 px-3 py-1 rounded-full">
-              {overview.total_orders} tổng
+              {overview.total_orders} đơn
             </span>
           </div>
-          <p className="text-sm opacity-90 mb-1">Đơn hàng</p>
+          <p className="text-sm opacity-90 mb-1">Đơn hàng mới</p>
           <p className="text-3xl font-bold mb-1">{overview.new_orders}</p>
-          <p className="text-xs opacity-75">Đơn mới trong kỳ</p>
+          <p className="text-xs opacity-75">Cần xử lý: {order_status.find(s => s.status === 'PENDING')?.count || 0}</p>
         </div>
 
         {/* Người dùng */}
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-2xl text-white">
+        <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-2xl text-white shadow-lg shadow-purple-200">
           <div className="flex items-center justify-between mb-4">
             <Users size={32} />
             <span className="text-sm bg-white/20 px-3 py-1 rounded-full">
@@ -175,31 +191,34 @@ const Dashboard = () => {
           </div>
           <p className="text-sm opacity-90 mb-1">Người dùng mới</p>
           <p className="text-3xl font-bold mb-1">{overview.new_users}</p>
-          <p className="text-xs opacity-75">Trong kỳ</p>
+          <p className="text-xs opacity-75">Tăng trưởng so với kỳ trước</p>
         </div>
 
-        {/* Sản phẩm */}
-        <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-2xl text-white">
+        {/* Sản phẩm/Kho hàng */}
+        <div className={`bg-gradient-to-br p-6 rounded-2xl text-white shadow-lg ${
+          overview.out_of_stock > 0 ? 'from-red-500 to-red-600 shadow-red-200' : 'from-green-500 to-green-600 shadow-green-200'
+        }`}>
           <div className="flex items-center justify-between mb-4">
             <Package size={32} />
-            <span className="text-sm bg-white/20 px-3 py-1 rounded-full">
-              {overview.out_of_stock} hết hàng
-            </span>
+            {overview.out_of_stock > 0 && (
+              <span className="text-sm bg-white/30 px-3 py-1 rounded-full flex items-center gap-1">
+                <AlertCircle size={14} /> {overview.out_of_stock} hết hàng
+              </span>
+            )}
           </div>
-          <p className="text-sm opacity-90 mb-1">Sản phẩm</p>
+          <p className="text-sm opacity-90 mb-1">Tổng sản phẩm</p>
           <p className="text-3xl font-bold mb-1">{overview.total_products}</p>
-          <p className="text-xs opacity-75">Tồn kho: {overview.total_stock}</p>
+          <p className="text-xs opacity-75">Số lượng trong kho: {overview.total_stock}</p>
         </div>
       </div>
 
-      {/* Charts */}
+      {/* Charts Section */}
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* Revenue Chart */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold flex items-center gap-2">
               <TrendingUp size={20} className="text-blue-600" />
-              Doanh thu theo ngày
+              Biểu đồ doanh thu
             </h2>
           </div>
           <div className="h-80">
@@ -238,9 +257,8 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Order Status Chart */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <h2 className="text-lg font-semibold mb-6">Phân bố trạng thái đơn hàng</h2>
+          <h2 className="text-lg font-semibold mb-6">Trạng thái đơn hàng</h2>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -268,7 +286,7 @@ const Dashboard = () => {
             {order_status.map((status, index) => (
               <div key={status.status} className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                <span className="text-sm text-slate-600">
+                <span className="text-sm text-slate-600 truncate">
                   {getStatusText(status.status)}: {status.count}
                 </span>
               </div>
@@ -277,94 +295,105 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Recent Orders & Top Products */}
+      {/* Bottom Section */}
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Recent Orders */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold">Đơn hàng gần đây</h2>
-            <Link to="/admin/orders" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-              Xem tất cả
+            <h2 className="text-lg font-semibold">Giao dịch mới nhất</h2>
+            <Link to="/admin/orders" className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
+              Xem tất cả <Eye size={14} />
             </Link>
           </div>
           <div className="space-y-4">
             {recent_orders && recent_orders.length > 0 ? (
               recent_orders.map((order) => (
-                <div key={order.id} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl transition-colors">
+                <div key={order.id} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl transition-colors border border-transparent hover:border-slate-100">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center">
-                      <ShoppingBag size={18} className="text-slate-600" />
+                    <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
+                      <ShoppingBag size={18} className="text-blue-600" />
                     </div>
                     <div>
-                      <p className="font-medium">Đơn hàng #{order.id}</p>
+                      <p className="font-medium text-slate-900">Đơn hàng #{order.id}</p>
                       <p className="text-xs text-slate-500">{order.full_name || order.username}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold text-blue-600">{formatCurrency(order.total_amount)}</p>
-                    <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(order.status)}`}>
+                    <p className="font-bold text-slate-900">{formatCurrency(order.total_amount)}</p>
+                    <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full ${getStatusColor(order.status)}`}>
                       {getStatusText(order.status)}
                     </span>
                   </div>
                 </div>
               ))
             ) : (
-              <p className="text-center text-slate-500 py-4">Chưa có đơn hàng nào</p>
+              <div className="text-center py-8">
+                <ShoppingBag size={40} className="mx-auto text-slate-200 mb-2" />
+                <p className="text-slate-500">Chưa có đơn hàng nào</p>
+              </div>
             )}
           </div>
         </div>
 
-        {/* Top Products */}
+        {/* Best Sellers */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <h2 className="text-lg font-semibold mb-6">Sản phẩm bán chạy</h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold">Sản phẩm bán chạy</h2>
+            <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-lg font-bold uppercase">Top 5</span>
+          </div>
           <div className="space-y-4">
             {best_selling_products && best_selling_products.length > 0 ? (
               best_selling_products.slice(0, 5).map((product, index) => (
                 <div key={product.id} className="flex items-center gap-4 p-3 hover:bg-slate-50 rounded-xl transition-colors">
-                  <span className="text-lg font-bold text-slate-400 w-8">#{index + 1}</span>
+                  <span className={`text-lg font-black w-8 ${index === 0 ? 'text-orange-500' : 'text-slate-300'}`}>
+                    0{index + 1}
+                  </span>
                   <img 
-                    src={product.image_url || 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&q=80&w=50'} 
-                    className="w-10 h-10 rounded-lg object-cover"
+                    src={product.image_url || 'https://via.placeholder.com/50'} 
+                    className="w-12 h-12 rounded-xl object-cover shadow-sm"
                     alt={product.name}
                   />
-                  <div className="flex-1">
-                    <p className="font-medium">{product.name}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-slate-900 truncate">{product.name}</p>
                     <p className="text-xs text-slate-500">{product.category_name}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold text-orange-600">{product.total_sold}</p>
-                    <p className="text-xs text-slate-500">đã bán</p>
+                    <p className="font-bold text-blue-600">{product.total_sold}</p>
+                    <p className="text-[10px] text-slate-400 uppercase font-bold">Đã bán</p>
                   </div>
                 </div>
               ))
             ) : (
-              <p className="text-center text-slate-500 py-4">Chưa có sản phẩm nào được bán</p>
+              <div className="text-center py-8">
+                <Package size={40} className="mx-auto text-slate-200 mb-2" />
+                <p className="text-slate-500">Dữ liệu đang được cập nhật</p>
+              </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Quick Stats */}
+      {/* Quick Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-xl border border-gray-100">
-          <Box size={20} className="text-blue-600 mb-2" />
+        <div className="bg-white p-5 rounded-2xl border border-gray-100 hover:shadow-md transition-shadow">
+          <Box size={24} className="text-blue-500 mb-3" />
           <p className="text-2xl font-bold text-slate-900">{overview.total_products}</p>
-          <p className="text-sm text-slate-500">Tổng sản phẩm</p>
+          <p className="text-sm font-medium text-slate-500">Mã linh kiện</p>
         </div>
-        <div className="bg-white p-4 rounded-xl border border-gray-100">
-          <Package size={20} className="text-green-600 mb-2" />
+        <div className="bg-white p-5 rounded-2xl border border-gray-100 hover:shadow-md transition-shadow">
+          <Package size={24} className="text-emerald-500 mb-3" />
           <p className="text-2xl font-bold text-slate-900">{overview.total_stock}</p>
-          <p className="text-sm text-slate-500">Tồn kho</p>
+          <p className="text-sm font-medium text-slate-500">Tổng tồn kho</p>
         </div>
-        <div className="bg-white p-4 rounded-xl border border-gray-100">
-          <AlertCircle size={20} className="text-red-600 mb-2" />
+        <div className="bg-white p-5 rounded-2xl border border-gray-100 hover:shadow-md transition-shadow">
+          <AlertCircle size={24} className="text-rose-500 mb-3" />
           <p className="text-2xl font-bold text-slate-900">{overview.out_of_stock}</p>
-          <p className="text-sm text-slate-500">Hết hàng</p>
+          <p className="text-sm font-medium text-slate-500">Cần nhập hàng</p>
         </div>
-        <div className="bg-white p-4 rounded-xl border border-gray-100">
-          <Eye size={20} className="text-purple-600 mb-2" />
+        <div className="bg-white p-5 rounded-2xl border border-gray-100 hover:shadow-md transition-shadow">
+          <Wrench size={24} className="text-amber-500 mb-3" />
           <p className="text-2xl font-bold text-slate-900">{overview.total_orders}</p>
-          <p className="text-sm text-slate-500">Tổng đơn hàng</p>
+          <p className="text-sm font-medium text-slate-500">Lượt dịch vụ</p>
         </div>
       </div>
     </div>

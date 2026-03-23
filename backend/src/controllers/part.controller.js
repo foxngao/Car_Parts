@@ -1,113 +1,16 @@
-const db = require('../config/db');
+const partModel = require('../models/part.model');
 
 // GET /api/v1/parts/search?keyword=...&model_year_id=...&category_id=...&min_price=...&max_price=...&brand_id=...&year=...&sort_by=...&sort_order=...&page=1&limit=10
 const searchParts = async (req, res) => {
   try {
-    const { 
-      keyword, model_year_id, category_id, 
-      min_price, max_price, brand_id, year,
-      is_combo,
-      sort_by = 'name', sort_order = 'asc',
-      page = 1, limit = 10 
-    } = req.query;
-    const offset = (page - 1) * limit;
-    let where = [];
-    let params = [];
-    let needCompatibilityJoin = false;
-
-    if (keyword) {
-      where.push('(p.name LIKE ? OR p.description LIKE ?)');
-      params.push(`%${keyword}%`, `%${keyword}%`);
-    }
-
-    if (model_year_id) {
-      where.push('pc.model_year_id = ?');
-      params.push(model_year_id);
-      needCompatibilityJoin = true;
-    }
-
-    if (category_id) {
-      where.push('p.category_id = ?');
-      params.push(category_id);
-    }
-
-    // Lọc theo khoảng giá
-    if (min_price) {
-      where.push('p.price >= ?');
-      params.push(parseFloat(min_price));
-    }
-    if (max_price) {
-      where.push('p.price <= ?');
-      params.push(parseFloat(max_price));
-    }
-
-    // Lọc theo hãng xe (brand_id)
-    if (brand_id) {
-      where.push('cm.brand_id = ?');
-      params.push(parseInt(brand_id));
-      needCompatibilityJoin = true;
-    }
-
-    // Lọc theo năm sản xuất
-    if (year) {
-      where.push('my.year = ?');
-      params.push(parseInt(year));
-      needCompatibilityJoin = true;
-    }
-
-    if (is_combo !== undefined) {
-      where.push('p.is_combo = ?');
-      params.push(is_combo === 'true' || is_combo === '1');
-    }
-
-    const whereClause = where.length > 0 ? 'WHERE ' + where.join(' AND ') : '';
-
-    // Xây dựng JOIN clause dựa trên filters
-    let joinClause = '';
-    if (needCompatibilityJoin) {
-      joinClause = `JOIN part_compatibility pc ON p.id = pc.part_id
-                     JOIN model_years my ON pc.model_year_id = my.id
-                     JOIN car_models cm ON my.model_id = cm.id`;
-    } else {
-      joinClause = 'LEFT JOIN part_compatibility pc ON p.id = pc.part_id';
-    }
-
-    // Xây dựng ORDER BY
-    const validSortFields = { name: 'p.name', price: 'p.price', created_at: 'p.created_at', stock: 'p.stock_quantity' };
-    const sortField = validSortFields[sort_by] || 'p.name';
-    const sortDir = sort_order.toLowerCase() === 'desc' ? 'DESC' : 'ASC';
-
-    // Count total
-    const [countResult] = await db.query(
-      `SELECT COUNT(DISTINCT p.id) as total FROM parts p ${joinClause} ${whereClause}`,
-      params
-    );
-    const total = countResult[0].total;
-
-    // Bổ sung JOIN model_years/car_models cho LEFT JOIN case nếu cần
-    let selectJoin = joinClause;
-    if (!needCompatibilityJoin) {
-      selectJoin = 'LEFT JOIN part_compatibility pc ON p.id = pc.part_id';
-    }
-
-    // Get paginated results
-    const [parts] = await db.query(
-      `SELECT DISTINCT p.*, c.name as category_name
-       FROM parts p
-       JOIN categories c ON p.category_id = c.id
-       ${selectJoin}
-       ${whereClause}
-       ORDER BY ${sortField} ${sortDir}
-       LIMIT ? OFFSET ?`,
-      [...params, parseInt(limit), parseInt(offset)]
-    );
+    const { parts, total, page, limit } = await partModel.searchParts(req.query);
 
     res.json({
       success: true,
       data: parts,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page,
+        limit,
         total,
         totalPages: Math.ceil(total / limit)
       }
@@ -128,46 +31,11 @@ const getSuggestions = async (req, res) => {
 
     const keyword = q.trim();
 
-    // Tìm gợi ý từ tên sản phẩm
-    const [partSuggestions] = await db.query(
-      `SELECT DISTINCT p.id, p.name, p.price, p.image_url, c.name as category_name, 'part' as type
-       FROM parts p
-       JOIN categories c ON p.category_id = c.id
-       WHERE p.name LIKE ? OR p.description LIKE ?
-       ORDER BY 
-         CASE WHEN p.name LIKE ? THEN 0 ELSE 1 END,
-         p.name
-       LIMIT 6`,
-      [`%${keyword}%`, `%${keyword}%`, `${keyword}%`]
-    );
-
-    // Tìm gợi ý từ danh mục
-    const [categorySuggestions] = await db.query(
-      `SELECT id, name, 'category' as type
-       FROM categories
-       WHERE name LIKE ?
-       ORDER BY name
-       LIMIT 3`,
-      [`%${keyword}%`]
-    );
-
-    // Tìm gợi ý từ hãng xe
-    const [brandSuggestions] = await db.query(
-      `SELECT id, name, country, 'brand' as type
-       FROM brands
-       WHERE name LIKE ?
-       ORDER BY name
-       LIMIT 3`,
-      [`%${keyword}%`]
-    );
+    const suggestions = await partModel.findSuggestions(keyword);
 
     res.json({
       success: true,
-      data: {
-        parts: partSuggestions,
-        categories: categorySuggestions,
-        brands: brandSuggestions
-      }
+      data: suggestions
     });
   } catch (error) {
     console.error('Get suggestions error:', error);
@@ -178,29 +46,13 @@ const getSuggestions = async (req, res) => {
 // GET /api/v1/parts/:id
 const getPartById = async (req, res) => {
   try {
-    const [parts] = await db.query(
-      `SELECT p.*, c.name as category_name
-       FROM parts p
-       JOIN categories c ON p.category_id = c.id
-       WHERE p.id = ?`,
-      [req.params.id]
-    );
+    const parts = await partModel.findPartById(req.params.id);
 
     if (parts.length === 0) {
       return res.status(404).json({ success: false, message: 'Part not found' });
     }
 
-    // Get compatible vehicles
-    const [compatibility] = await db.query(
-      `SELECT my.id as model_year_id, my.year, cm.name as model_name, b.name as brand_name
-       FROM part_compatibility pc
-       JOIN model_years my ON pc.model_year_id = my.id
-       JOIN car_models cm ON my.model_id = cm.id
-       JOIN brands b ON cm.brand_id = b.id
-       WHERE pc.part_id = ?
-       ORDER BY b.name, cm.name, my.year`,
-      [req.params.id]
-    );
+    const compatibility = await partModel.findCompatibleVehiclesByPartId(req.params.id);
 
     res.json({
       success: true,
@@ -214,25 +66,26 @@ const getPartById = async (req, res) => {
 
 // POST /api/v1/admin/parts
 const createPart = async (req, res) => {
-  const connection = await db.getConnection();
+  const connection = await partModel.getConnection();
   try {
     const { category_id, name, description, price, stock_quantity, image_url, is_combo = false, combo_items = [] } = req.body;
 
     await connection.beginTransaction();
 
-    const [result] = await connection.query(
-      'INSERT INTO parts (category_id, name, description, price, stock_quantity, image_url, is_combo) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [category_id, name, description, price, stock_quantity, image_url, is_combo]
-    );
+    const result = await partModel.createPart(connection, {
+      category_id,
+      name,
+      description,
+      price,
+      stock_quantity,
+      image_url,
+      is_combo
+    });
 
     const partId = result.insertId;
 
     if (is_combo && combo_items.length > 0) {
-      const values = combo_items.map(item => [partId, item.part_id, item.quantity]);
-      await connection.query(
-        'INSERT INTO combo_items (combo_id, part_id, quantity) VALUES ?',
-        [values]
-      );
+      await partModel.insertComboItems(connection, partId, combo_items);
     }
 
     await connection.commit();
@@ -252,17 +105,22 @@ const createPart = async (req, res) => {
 
 // PUT /api/v1/admin/parts/:id
 const updatePart = async (req, res) => {
-  const connection = await db.getConnection();
+  const connection = await partModel.getConnection();
   try {
     const { category_id, name, description, price, stock_quantity, image_url, is_combo = false, combo_items = [] } = req.body;
     const partId = req.params.id;
 
     await connection.beginTransaction();
 
-    const [result] = await connection.query(
-      'UPDATE parts SET category_id = ?, name = ?, description = ?, price = ?, stock_quantity = ?, image_url = ?, is_combo = ? WHERE id = ?',
-      [category_id, name, description, price, stock_quantity, image_url, is_combo, partId]
-    );
+    const result = await partModel.updatePartById(connection, partId, {
+      category_id,
+      name,
+      description,
+      price,
+      stock_quantity,
+      image_url,
+      is_combo
+    });
 
     if (result.affectedRows === 0) {
       await connection.rollback();
@@ -271,16 +129,12 @@ const updatePart = async (req, res) => {
 
     if (is_combo) {
       // Clear old combo items
-      await connection.query('DELETE FROM combo_items WHERE combo_id = ?', [partId]);
+      await partModel.deleteComboItemsByComboId(connection, partId);
       if (combo_items.length > 0) {
-        const values = combo_items.map(item => [partId, item.part_id, item.quantity]);
-        await connection.query(
-          'INSERT INTO combo_items (combo_id, part_id, quantity) VALUES ?',
-          [values]
-        );
+        await partModel.insertComboItems(connection, partId, combo_items);
       }
     } else {
-      await connection.query('DELETE FROM combo_items WHERE combo_id = ?', [partId]);
+      await partModel.deleteComboItemsByComboId(connection, partId);
     }
 
     await connection.commit();
@@ -297,7 +151,7 @@ const updatePart = async (req, res) => {
 // DELETE /api/v1/admin/parts/:id
 const deletePart = async (req, res) => {
   try {
-    const [result] = await db.query('DELETE FROM parts WHERE id = ?', [req.params.id]);
+    const result = await partModel.deletePartById(req.params.id);
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, message: 'Part not found' });
     }
@@ -318,11 +172,7 @@ const addCompatibility = async (req, res) => {
       return res.status(400).json({ success: false, message: 'model_year_ids must be a non-empty array' });
     }
 
-    const values = model_year_ids.map(myId => [partId, myId]);
-    await db.query(
-      'INSERT IGNORE INTO part_compatibility (part_id, model_year_id) VALUES ?',
-      [values]
-    );
+    await partModel.addCompatibilityMappings(partId, model_year_ids);
 
     res.status(201).json({
       success: true,

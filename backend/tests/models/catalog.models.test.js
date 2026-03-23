@@ -44,7 +44,7 @@ test('model model findByBrandId queries car_models by brand id', async () => {
   assert.deepEqual(result, [{ id: 3, brand_id: 5, name: 'Accord' }]);
 });
 
-test('modelYear model findByModelId queries years descending', async () => {
+test('model model findByModelId queries years descending', async () => {
   const calls = [];
   const db = {
     query: async (...args) => {
@@ -53,11 +53,11 @@ test('modelYear model findByModelId queries years descending', async () => {
     }
   };
 
-  const modelYearModel = loadWithMocks('../../src/models/modelYear.model.js', {
+  const modelModel = loadWithMocks('../../src/models/model.model.js', {
     '../config/db': db
   });
 
-  const result = await modelYearModel.findByModelId(2);
+  const result = await modelModel.findByModelId(2);
 
   assert.deepEqual(calls, [[
     'SELECT * FROM model_years WHERE model_id = ? ORDER BY year DESC',

@@ -3,12 +3,14 @@ const router = express.Router();
 const { body } = require('express-validator');
 const validate = require('../middlewares/validate');
 const { verifyToken, isAdmin } = require('../middlewares/auth');
+const bookingModel = require('../models/booking.model');
 
 // Controllers
 const { createBrand, updateBrand, deleteBrand } = require('../controllers/brand.controller');
 const { createModel, updateModel, deleteModel, createModelYear, deleteModelYear } = require('../controllers/model.controller');
 const { createCategory, updateCategory, deleteCategory } = require('../controllers/category.controller');
 const { createPart, updatePart, deletePart, addCompatibility } = require('../controllers/part.controller');
+
 const { 
   getDashboardStats,
   getDetailedStatistics,
@@ -148,4 +150,27 @@ router.put('/orders/:id/status', [
   validate
 ], updateOrderStatus);
 
+// Quản lý Gara
+router.get('/garages', verifyToken, isAdmin, async (req, res) => {
+    const garages = await bookingModel.getAllGarages(); // Tận dụng hàm cũ
+    res.json(garages);
+});
+router.post('/garages', verifyToken, isAdmin, async (req, res) => {
+    await bookingModel.createGarage(req.body);
+    res.json({ message: 'Thêm gara thành công' });
+});
+router.put('/garages/:id', verifyToken, isAdmin, async (req, res) => {
+    await bookingModel.updateGarage(req.params.id, req.body);
+    res.json({ message: 'Cập nhật thành công' });
+});
+
+// Quản lý Lịch hẹn
+router.get('/bookings', verifyToken, isAdmin, async (req, res) => {
+    const bookings = await bookingModel.getAllBookings();
+    res.json(bookings);
+});
+router.patch('/bookings/:id/status', verifyToken, isAdmin, async (req, res) => {
+    await bookingModel.updateBookingStatus(req.params.id, req.body.status);
+    res.json({ message: 'Cập nhật trạng thái thành công' });
+});
 module.exports = router;

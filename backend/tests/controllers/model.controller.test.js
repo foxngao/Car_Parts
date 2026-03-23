@@ -16,18 +16,20 @@ const createResponse = () => ({
   }
 });
 
-test('getYearsByModel returns data from modelYear model', async () => {
+test('getYearsByModel returns data from model model', async () => {
   let receivedModelId;
-  const modelYearModel = {
+  const modelModel = {
     findByModelId: async (modelId) => {
       receivedModelId = modelId;
       return [{ id: 1, model_id: 12, year: 2024 }];
+    },
+    updateModelById: async () => {
+      throw new Error('should not be called');
     }
   };
 
   const { getYearsByModel } = loadWithMocks('../../src/controllers/model.controller.js', {
-    '../models/model.model': {},
-    '../models/modelYear.model': modelYearModel
+    '../models/model.model': modelModel
   });
 
   const response = createResponse();
@@ -44,12 +46,14 @@ test('getYearsByModel returns data from modelYear model', async () => {
 
 test('updateModel returns 404 when model layer reports no affected rows', async () => {
   const modelModel = {
+    findByModelId: async () => {
+      throw new Error('should not be called');
+    },
     updateModelById: async () => ({ affectedRows: 0 })
   };
 
   const { updateModel } = loadWithMocks('../../src/controllers/model.controller.js', {
-    '../models/model.model': modelModel,
-    '../models/modelYear.model': {}
+    '../models/model.model': modelModel
   });
 
   const response = createResponse();
@@ -67,15 +71,17 @@ test('createModelYear maps duplicate errors to 409', async () => {
   const duplicateError = new Error('duplicate');
   duplicateError.code = 'ER_DUP_ENTRY';
 
-  const modelYearModel = {
+  const modelModel = {
     createModelYear: async () => {
       throw duplicateError;
+    },
+    findByModelId: async () => {
+      throw new Error('should not be called');
     }
   };
 
   const { createModelYear } = loadWithMocks('../../src/controllers/model.controller.js', {
-    '../models/model.model': {},
-    '../models/modelYear.model': modelYearModel
+    '../models/model.model': modelModel
   });
 
   const response = createResponse();

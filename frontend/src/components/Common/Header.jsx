@@ -30,7 +30,8 @@ import {
   XCircle,
   Car,
   GitCompareArrows,
-  PackageOpen
+  PackageOpen,
+  Calendar // Đã thêm icon Calendar
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -47,7 +48,6 @@ const Header = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const [compareCount, setCompareCount] = useState(0);
 
   // Track compare count from localStorage
@@ -68,7 +68,7 @@ const Header = () => {
     };
   }, []);
 
-  // Fetch cart count
+  // Fetch cart count and notifications
   useEffect(() => {
     if (isAuthenticated) {
       fetchCartCount();
@@ -123,7 +123,7 @@ const Header = () => {
   const markAllAsRead = async () => {
     try {
       await notificationApi.markAllAsRead();
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
       setUnreadCount(0);
       toast.success('Đã đánh dấu tất cả là đã đọc');
     } catch (error) {
@@ -137,7 +137,7 @@ const Header = () => {
       await notificationApi.deleteNotification(notificationId);
       const deletedNotification = notifications.find(n => n.id === notificationId);
       setNotifications(prev => prev.filter(n => n.id !== notificationId));
-      if (!deletedNotification?.read) {
+      if (!deletedNotification?.is_read) {
         setUnreadCount(prev => Math.max(0, prev - 1));
       }
       toast.success('Đã xóa thông báo');
@@ -317,14 +317,14 @@ const Header = () => {
                           <div
                             key={notif.id}
                             onClick={() => markAsRead(notif.id)}
-                            className={`px-4 py-3 border-b last:border-0 cursor-pointer transition-all ${getNotificationBgColor(notif.type, notif.read)}`}
+                            className={`px-4 py-3 border-b last:border-0 cursor-pointer transition-all ${getNotificationBgColor(notif.type, notif.is_read)}`}
                           >
                             <div className="flex gap-3">
                               <div className="flex-shrink-0 mt-1">{getNotificationIcon(notif.type)}</div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-start justify-between gap-2">
-                                  <p className={`text-sm ${!notif.read ? 'font-bold' : 'font-medium'}`}>{notif.title}</p>
-                                  <button onClick={(e) => deleteNotification(notif.id, e)} className="opacity-0 group-hover:opacity-100 hover:text-red-600 transition-opacity">
+                                  <p className={`text-sm ${!notif.is_read ? 'font-bold' : 'font-medium'}`}>{notif.title}</p>
+                                  <button onClick={(e) => deleteNotification(notif.id, e)} className="p-1 hover:text-red-600 transition-colors">
                                     <X size={14} />
                                   </button>
                                 </div>
@@ -332,7 +332,7 @@ const Header = () => {
                                 <div className="flex items-center gap-2 mt-2">
                                   <Clock size={12} className="text-slate-400" />
                                   <span className="text-xs text-slate-400">{formatNotificationTime(notif.created_at)}</span>
-                                  {!notif.read && <span className="bg-blue-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">Mới</span>}
+                                  {!notif.is_read && <span className="bg-blue-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">Mới</span>}
                                 </div>
                               </div>
                             </div>
@@ -397,9 +397,6 @@ const Header = () => {
                     <div className="sm:hidden px-4 py-3 border-b">
                       <p className="font-bold">{user?.full_name || user?.username}</p>
                       <p className="text-xs text-slate-400">{user?.email}</p>
-                      <div className={`mt-2 text-[10px] font-black uppercase px-2 py-0.5 rounded-md inline-block border ${
-                        isAdmin ? 'bg-purple-50 text-purple-600 border-purple-200' : 'bg-blue-50 text-blue-600 border-blue-200'
-                      }`}>{roleLabel}</div>
                     </div>
 
                     <Link to="/profile" onClick={() => setIsUserDropdownOpen(false)} className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-50 transition-colors">
@@ -408,15 +405,14 @@ const Header = () => {
                     <Link to="/orders" onClick={() => setIsUserDropdownOpen(false)} className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-50 transition-colors">
                       <History size={18} /><span className="font-medium">Đơn hàng của tôi</span>
                     </Link>
+                    <Link to="/my-bookings" onClick={() => setIsUserDropdownOpen(false)} className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-50 transition-colors">
+                      <Calendar size={18} /><span className="font-medium">Lịch hẹn của tôi</span>
+                    </Link>
                     <Link to="/search-history" onClick={() => setIsUserDropdownOpen(false)} className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-50 transition-colors">
                       <Clock size={18} /><span className="font-medium">Lịch sử tìm kiếm</span>
                     </Link>
                     <Link to="/wishlist" onClick={() => setIsUserDropdownOpen(false)} className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-50 transition-colors lg:hidden">
                       <Heart size={18} /><span className="font-medium">Yêu thích</span>
-                    </Link>
-                    <Link to="/notifications" onClick={() => setIsUserDropdownOpen(false)} className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-50 transition-colors lg:hidden relative">
-                      <Bell size={18} /><span className="font-medium">Thông báo</span>
-                      {unreadCount > 0 && <span className="ml-auto bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{unreadCount}</span>}
                     </Link>
 
                     {isAdmin && (
@@ -446,7 +442,7 @@ const Header = () => {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="lg:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+            className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
           >
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
@@ -455,7 +451,7 @@ const Header = () => {
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="lg:hidden absolute top-20 left-0 right-0 bg-white border-b border-slate-100 shadow-lg max-h-[calc(100vh-80px)] overflow-y-auto">
+        <div className="md:hidden absolute top-20 left-0 right-0 bg-white border-b border-slate-100 shadow-lg max-h-[calc(100vh-80px)] overflow-y-auto">
           <div className="max-w-7xl mx-auto px-4 py-4">
             <nav className="flex flex-col space-y-2">
               {navLinks.map((link) => {
@@ -474,6 +470,17 @@ const Header = () => {
                 );
               })}
 
+              {isAuthenticated && (
+                <>
+                   <Link to="/my-bookings" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-slate-600 hover:bg-slate-50">
+                    <Calendar size={18} />LỊCH HẸN CỦA TÔI
+                  </Link>
+                  <Link to="/profile" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-slate-600 hover:bg-slate-50">
+                    <User size={18} />HỒ SƠ CÁ NHÂN
+                  </Link>
+                </>
+              )}
+
               {isAdmin && (
                 <Link to="/admin" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-purple-600 hover:bg-purple-50">
                   <ShieldCheck size={18} />QUẢN TRỊ
@@ -481,8 +488,8 @@ const Header = () => {
               )}
 
               {!isAuthenticated && (
-                <div className="border-t pt-4 mt-4">
-                  <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} className="block w-full text-center px-4 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors mb-2">ĐĂNG NHẬP</Link>
+                <div className="border-t pt-4 mt-4 space-y-2">
+                  <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} className="block w-full text-center px-4 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors">ĐĂNG NHẬP</Link>
                   <Link to="/register" onClick={() => setIsMobileMenuOpen(false)} className="block w-full text-center px-4 py-3 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50 transition-colors">ĐĂNG KÝ</Link>
                 </div>
               )}

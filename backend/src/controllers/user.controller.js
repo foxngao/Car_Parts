@@ -1,5 +1,5 @@
-const db = require('../config/db');
 const bcrypt = require('bcryptjs');
+const userModel = require('../models/user.model');
 
 // GET /api/v1/user/profile - Lấy thông tin profile kèm role
 const getProfile = async (req, res) => {
@@ -7,17 +7,7 @@ const getProfile = async (req, res) => {
     console.log('Fetching profile for user ID:', req.user.id);
     
     // Query lấy thông tin user kèm role từ database
-    const [users] = await db.query(
-      `SELECT u.id, u.username, u.email, u.full_name, u.phone, u.address, 
-              u.created_at, u.is_active,
-              GROUP_CONCAT(r.name) as roles
-       FROM users u
-       LEFT JOIN user_roles ur ON u.id = ur.user_id
-       LEFT JOIN roles r ON ur.role_id = r.id
-       WHERE u.id = ?
-       GROUP BY u.id`,
-      [req.user.id]
-    );
+    const users = await userModel.findProfileById(req.user.id);
 
     if (users.length === 0) {
       console.log('User not found in database');
@@ -62,10 +52,7 @@ const updateProfile = async (req, res) => {
   try {
     const { full_name, phone, address } = req.body;
 
-    await db.query(
-      'UPDATE users SET full_name = ?, phone = ?, address = ? WHERE id = ?',
-      [full_name, phone, address, req.user.id]
-    );
+    await userModel.updateProfileById(req.user.id, { full_name, phone, address });
 
     res.json({ success: true, message: 'Profile updated successfully' });
   } catch (error) {
@@ -80,7 +67,7 @@ const changePassword = async (req, res) => {
     const { current_password, new_password } = req.body;
 
     // Get current password hash
-    const [users] = await db.query('SELECT password FROM users WHERE id = ?', [req.user.id]);
+    const users = await userModel.findPasswordByUserId(req.user.id);
     
     if (users.length === 0) {
       return res.status(404).json({ success: false, message: 'User not found' });
@@ -93,7 +80,7 @@ const changePassword = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(new_password, 10);
-    await db.query('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, req.user.id]);
+    await userModel.updatePasswordByUserId(req.user.id, hashedPassword);
 
     res.json({ success: true, message: 'Password changed successfully' });
   } catch (error) {

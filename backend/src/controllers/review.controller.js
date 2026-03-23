@@ -1,4 +1,4 @@
-const db = require('../config/db');
+const reviewModel = require('../models/review.model');
 
 // GET /api/v1/parts/:id/reviews
 const getReviews = async (req, res) => {
@@ -6,28 +6,10 @@ const getReviews = async (req, res) => {
     const partId = req.params.id;
 
     // Lấy rating summary
-    const [summary] = await db.query(
-      `SELECT 
-        COUNT(*) as review_count,
-        ROUND(AVG(rating), 1) as avg_rating,
-        SUM(CASE WHEN rating = 5 THEN 1 ELSE 0 END) as star_5,
-        SUM(CASE WHEN rating = 4 THEN 1 ELSE 0 END) as star_4,
-        SUM(CASE WHEN rating = 3 THEN 1 ELSE 0 END) as star_3,
-        SUM(CASE WHEN rating = 2 THEN 1 ELSE 0 END) as star_2,
-        SUM(CASE WHEN rating = 1 THEN 1 ELSE 0 END) as star_1
-       FROM part_reviews WHERE part_id = ?`,
-      [partId]
-    );
+    const summary = await reviewModel.findReviewSummaryByPartId(partId);
 
     // Lấy danh sách reviews
-    const [reviews] = await db.query(
-      `SELECT pr.*, u.username, u.full_name
-       FROM part_reviews pr
-       JOIN users u ON pr.user_id = u.id
-       WHERE pr.part_id = ?
-       ORDER BY pr.created_at DESC`,
-      [partId]
-    );
+    const reviews = await reviewModel.findReviewsByPartId(partId);
 
     res.json({
       success: true,
@@ -49,24 +31,18 @@ const createReview = async (req, res) => {
     const { rating, comment } = req.body;
 
     // Kiểm tra part tồn tại
-    const [parts] = await db.query('SELECT id FROM parts WHERE id = ?', [partId]);
+    const parts = await reviewModel.findPartById(partId);
     if (parts.length === 0) {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
     // Kiểm tra đã review chưa
-    const [existing] = await db.query(
-      'SELECT id FROM part_reviews WHERE part_id = ? AND user_id = ?',
-      [partId, req.user.id]
-    );
+    const existing = await reviewModel.findExistingReview(partId, req.user.id);
     if (existing.length > 0) {
       return res.status(409).json({ success: false, message: 'Bạn đã đánh giá sản phẩm này rồi' });
     }
 
-    const [result] = await db.query(
-      'INSERT INTO part_reviews (part_id, user_id, rating, comment) VALUES (?, ?, ?, ?)',
-      [partId, req.user.id, rating, comment || null]
-    );
+    const result = await reviewModel.createReview(partId, req.user.id, rating, comment);
 
     res.status(201).json({
       success: true,
@@ -84,10 +60,7 @@ const updateReview = async (req, res) => {
   try {
     const { rating, comment } = req.body;
 
-    const [reviews] = await db.query(
-      'SELECT * FROM part_reviews WHERE id = ?',
-      [req.params.id]
-    );
+    const reviews = await reviewModel.findReviewById(req.params.id);
 
     if (reviews.length === 0) {
       return res.status(404).json({ success: false, message: 'Review not found' });
@@ -97,10 +70,7 @@ const updateReview = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Bạn chỉ có thể sửa đánh giá của mình' });
     }
 
-    await db.query(
-      'UPDATE part_reviews SET rating = ?, comment = ? WHERE id = ?',
-      [rating, comment || null, req.params.id]
-    );
+    await reviewModel.updateReviewById(req.params.id, rating, comment);
 
     res.json({ success: true, message: 'Cập nhật đánh giá thành công' });
   } catch (error) {
@@ -112,10 +82,7 @@ const updateReview = async (req, res) => {
 // DELETE /api/v1/reviews/:id
 const deleteReview = async (req, res) => {
   try {
-    const [reviews] = await db.query(
-      'SELECT * FROM part_reviews WHERE id = ?',
-      [req.params.id]
-    );
+    const reviews = await reviewModel.findReviewById(req.params.id);
 
     if (reviews.length === 0) {
       return res.status(404).json({ success: false, message: 'Review not found' });
@@ -126,7 +93,7 @@ const deleteReview = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Không có quyền xóa đánh giá này' });
     }
 
-    await db.query('DELETE FROM part_reviews WHERE id = ?', [req.params.id]);
+    await reviewModel.deleteReviewById(req.params.id);
 
     res.json({ success: true, message: 'Xóa đánh giá thành công' });
   } catch (error) {

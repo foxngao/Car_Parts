@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
@@ -17,6 +17,8 @@ import Contact from './pages/Contact';
 import Compare from './pages/Compare';
 import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
+import BookingPage from './pages/BookingPage';
+import MyBookings from './pages/MyBookings';
 
 // Protected pages
 import Cart from './pages/Cart';
@@ -39,7 +41,9 @@ import Models from './pages/Admin/Models';
 import Categories from './pages/Admin/Categories';
 import AdminOrders from './pages/Admin/Orders';
 import Statistics from './pages/Admin/Statistics';
-import Settings from './pages/Admin/Settings'; // THÊM IMPORT
+import Settings from './pages/Admin/Settings'; 
+import ManageGarages from './pages/Admin/ManageGarages';
+import ManageBookings from './pages/Admin/ManageBookings';
 
 // Protected route wrapper
 const ProtectedRoute = ({ children, requireAdmin = false }) => {
@@ -81,82 +85,29 @@ function AppContent() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          {/* Protected routes */}
-          <Route
-            path="/cart"
-            element={
-              <ProtectedRoute>
-                <Cart />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/checkout"
-            element={
-              <ProtectedRoute>
-                <Checkout />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/orders"
-            element={
-              <ProtectedRoute>
-                <Orders />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/orders/:id"
-            element={
-              <ProtectedRoute>
-                <OrderDetail />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/search-history"
-            element={
-              <ProtectedRoute>
-                <SearchHistory />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/wishlist"
-            element={
-              <ProtectedRoute>
-                <FavoritesPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/notifications"
-            element={
-              <ProtectedRoute>
-                <Notifications />
-              </ProtectedRoute>
-            }
-          />
+          {/* User Protected routes */}
+          <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
+          <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+          <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+          <Route path="/orders/:id" element={<ProtectedRoute><OrderDetail /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/search-history" element={<ProtectedRoute><SearchHistory /></ProtectedRoute>} />
+          <Route path="/favorites" element={<ProtectedRoute><FavoritesPage /></ProtectedRoute>} />
+          <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+          <Route path="/my-bookings" element={<ProtectedRoute><MyBookings /></ProtectedRoute>} />
+          <Route path="/booking" element={<ProtectedRoute><BookingPage /></ProtectedRoute>} />
 
-          {/* Admin routes */}
+          {/* Admin routes - Fixed path nesting */}
           <Route
             path="/admin"
             element={
-              <ProtectedRoute requireAdmin>
+              <ProtectedRoute requireAdmin={true}>
                 <AdminLayout />
               </ProtectedRoute>
             }
           >
-            <Route index element={<Navigate to="/admin/dashboard" replace />} />
+            {/* Note: Đường dẫn con không bắt đầu bằng dấu gạch chéo '/' */}
+            <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="users" element={<Users />} />
             <Route path="products" element={<Products />} />
@@ -166,18 +117,23 @@ function AppContent() {
             <Route path="categories" element={<Categories />} />
             <Route path="orders" element={<AdminOrders />} />
             <Route path="statistics" element={<Statistics />} />
-            <Route path="settings" element={<Settings />} /> {/* THÊM ROUTE */}
+            <Route path="garages" element={<ManageGarages />} />
+            <Route path="bookings" element={<ManageBookings />} />
+            <Route path="settings" element={<Settings />} />
           </Route>
 
           {/* 404 Not Found */}
           <Route path="*" element={
             <div className="min-h-screen flex items-center justify-center">
               <div className="text-center">
-                <h1 className="text-6xl font-black text-slate-900 mb-4">404</h1>
-                <p className="text-xl text-slate-500 mb-8">Không tìm thấy trang</p>
-                <a href="/" className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-slate-900 transition-colors">
-                  VỀ TRANG CHỦ
-                </a>
+                <h1 className="text-9xl font-black text-slate-200">404</h1>
+                <div className="relative -mt-20">
+                  <h2 className="text-2xl font-bold text-slate-900 mb-2">Không tìm thấy trang</h2>
+                  <p className="text-slate-500 mb-8">Đường dẫn bạn truy cập không tồn tại hoặc đã bị dời đi.</p>
+                  <Link to="/" className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-slate-900 transition-all shadow-lg shadow-blue-200">
+                    VỀ TRANG CHỦ
+                  </Link>
+                </div>
               </div>
             </div>
           } />

@@ -16,7 +16,8 @@ import {
   ChevronRight,
   AlertCircle,
   Eye,
-  Search as SearchIcon
+  Search as SearchIcon,
+  Filter // Thêm icon Filter
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -31,8 +32,9 @@ const Combos = () => {
     page: 1, limit: 10, total: 0, totalPages: 0
   });
 
-  // State hỗ trợ tìm kiếm part khi thêm vào combo
+  // State hỗ trợ chọn part khi thêm vào combo
   const [searchPartQuery, setSearchPartQuery] = useState('');
+  const [selectedPartCategoryId, setSelectedPartCategoryId] = useState(''); // State lọc theo danh mục cho part
   const [searchPartResults, setSearchPartResults] = useState([]);
   const [isSearchingPart, setIsSearchingPart] = useState(false);
 
@@ -53,6 +55,13 @@ const Combos = () => {
   useEffect(() => {
     fetchCombos();
   }, [pagination.page, searchTerm]);
+
+  // Tự động tìm kiếm part khi admin chọn danh mục hoặc nhập từ khóa trong Modal
+  useEffect(() => {
+    if (showModal && (selectedPartCategoryId || searchPartQuery)) {
+      handleSearchPartsForCombo();
+    }
+  }, [selectedPartCategoryId, searchPartQuery]);
 
   const fetchCategories = async () => {
     try {
@@ -83,13 +92,17 @@ const Combos = () => {
   };
 
   const handleSearchPartsForCombo = async () => {
-    if (!searchPartQuery) return;
     setIsSearchingPart(true);
     try {
-      const res = await productApi.search({ keyword: searchPartQuery, limit: 5, is_combo: false });
+      const res = await productApi.search({ 
+        keyword: searchPartQuery || undefined, 
+        category_id: selectedPartCategoryId || undefined,
+        limit: 20, // Tăng limit để admin dễ chọn
+        is_combo: false 
+      });
       setSearchPartResults(res.data.data || []);
     } catch (error) {
-      toast.error('Không tìm thấy sản phẩm');
+      console.error('Lỗi tìm sản phẩm', error);
     } finally {
       setIsSearchingPart(false);
     }
@@ -114,8 +127,7 @@ const Combos = () => {
         }
       ]
     });
-    setSearchPartQuery('');
-    setSearchPartResults([]);
+    // Không reset search để admin có thể chọn tiếp món khác trong cùng danh mục
   };
 
   const removePartFromCombo = (partId) => {
@@ -205,7 +217,6 @@ const Combos = () => {
     });
     setShowModal(true);
 
-    // Fetch detail to get combo_items
     try {
       const res = await comboApi.getComboDetails(combo.id);
       const detail = res.data.data;
@@ -232,6 +243,7 @@ const Combos = () => {
     setEditingCombo(null);
     setSearchPartResults([]);
     setSearchPartQuery('');
+    setSelectedPartCategoryId('');
   };
 
   if (loading && combos.length === 0) {
@@ -302,7 +314,7 @@ const Combos = () => {
 
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex flex-col items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-[32px] max-w-5xl w-full h-[90vh] flex flex-col overflow-hidden">
+          <div className="bg-white rounded-[32px] max-w-6xl w-full h-[90vh] flex flex-col overflow-hidden">
             <div className="flex items-center justify-between p-6 border-b">
               <h2 className="text-2xl font-bold">{editingCombo ? 'Sửa Combo' : 'Tạo Combo mới'}</h2>
               <button onClick={() => setShowModal(false)} className="p-2 hover:bg-slate-100 rounded-xl"><X size={20} /></button>
@@ -312,13 +324,15 @@ const Combos = () => {
                 
                 {/* Cột trái: Thông tin cơ bản */}
                 <div className="col-span-12 lg:col-span-4 space-y-4">
-                  <h3 className="font-bold text-lg mb-4">Thông tin chung</h3>
+                  <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                    <AlertCircle size={18} className="text-blue-600"/> Thông tin chung
+                  </h3>
                   <div>
                     <label className="block text-sm font-medium mb-1">Tên Combo *</label>
                     <input name="name" value={formData.name} onChange={handleInputChange} required className="w-full p-3 border rounded-xl" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">Danh mục *</label>
+                    <label className="block text-sm font-medium mb-1">Danh mục Combo *</label>
                     <select name="category_id" value={formData.category_id} onChange={handleInputChange} required className="w-full p-3 border rounded-xl">
                       <option value="">Chọn danh mục</option>
                       {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -328,13 +342,13 @@ const Combos = () => {
                     <label className="block text-sm font-medium mb-1">Mô tả</label>
                     <textarea name="description" value={formData.description} onChange={handleInputChange} rows="3" className="w-full p-3 border rounded-xl" />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Giá bán *</label>
-                    <input type="number" name="price" value={formData.price} onChange={handleInputChange} required className="w-full p-3 border rounded-xl text-orange-600 font-bold" />
+                  <div className="p-4 bg-orange-50 rounded-2xl border border-orange-100">
+                    <label className="block text-sm font-bold text-orange-800 mb-1">Giá bán Combo *</label>
+                    <input type="number" name="price" value={formData.price} onChange={handleInputChange} required className="w-full p-3 border rounded-xl text-orange-600 font-black text-xl" />
                     {formData.combo_items.length > 0 && (
-                      <p className="text-xs text-green-600 mt-1 mt-2">
-                        Gợi ý tổng trị giá các món lẻ: {formatCurrency(calcSuggestedPrice())}
-                      </p>
+                      <div className="flex items-center gap-2 mt-2 text-xs font-bold text-green-700">
+                        <Check size={14}/> Gợi ý giá gốc: {formatCurrency(calcSuggestedPrice())}
+                      </div>
                     )}
                   </div>
                   <div>
@@ -348,67 +362,102 @@ const Combos = () => {
                 </div>
 
                 {/* Cột phải: Thêm sản phẩm thành phần */}
-                <div className="col-span-12 lg:col-span-8 bg-white p-6 rounded-2xl border shadow-sm flex flex-col">
-                  <h3 className="font-bold text-lg mb-4">Thành phần trong Combo</h3>
+                <div className="col-span-12 lg:col-span-8 bg-white p-6 rounded-[24px] border shadow-sm flex flex-col space-y-6">
+                  <h3 className="font-bold text-lg flex items-center gap-2">
+                    <Plus size={20} className="text-blue-600" /> Thành phần trong Combo
+                  </h3>
                   
-                  {/* Tìm kiếm */}
-                  <div className="flex gap-2 relative mb-6">
-                    <input 
-                      type="text" 
-                      placeholder="Tìm theo tên món hàng..." 
-                      value={searchPartQuery} 
-                      onChange={e => setSearchPartQuery(e.target.value)}
-                      onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), handleSearchPartsForCombo())}
-                      className="flex-1 p-3 border rounded-xl pl-10"
-                    />
-                    <SearchIcon className="absolute left-3 top-3.5 text-slate-400" size={20} />
-                    <button type="button" onClick={handleSearchPartsForCombo} className="bg-slate-900 text-white px-6 rounded-xl font-bold">Tìm</button>
-                    
-                    {/* Kết quả tìm kiếm (tuyệt đối) */}
-                    {searchPartResults.length > 0 && (
-                      <div className="absolute top-14 left-0 right-0 bg-white border rounded-xl shadow-2xl z-10 max-h-64 overflow-y-auto">
-                        {searchPartResults.map(p => (
-                          <div key={p.id} className="flex items-center justify-between p-3 border-b hover:bg-slate-50">
-                            <div className="flex items-center gap-3">
-                              <img src={p.image_url || 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3'} className="w-10 h-10 object-cover rounded-md" alt=""/>
-                              <div>
-                                <p className="font-bold text-sm">{p.name}</p>
-                                <p className="text-xs text-orange-600">{formatCurrency(p.price)} - Kho: {p.stock_quantity}</p>
+                  {/* Bộ lọc và Tìm kiếm thành phần */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="relative">
+                       <Filter className="absolute left-3 top-3.5 text-slate-400" size={18} />
+                       <select 
+                         value={selectedPartCategoryId}
+                         onChange={(e) => setSelectedPartCategoryId(e.target.value)}
+                         className="w-full pl-10 pr-4 py-3 bg-slate-50 border-none rounded-xl outline-none text-sm font-medium"
+                       >
+                         <option value="">Lọc theo Danh mục sản phẩm</option>
+                         {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                       </select>
+                    </div>
+
+                    <div className="relative">
+                      <SearchIcon className="absolute left-3 top-3.5 text-slate-400" size={18} />
+                      <input 
+                        type="text" 
+                        placeholder="Tìm theo tên sản phẩm..." 
+                        value={searchPartQuery} 
+                        onChange={e => setSearchPartQuery(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 bg-slate-50 border-none rounded-xl outline-none text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Vùng chọn sản phẩm nhanh (Grid/List) */}
+                  <div className="bg-slate-50 rounded-2xl p-4 border-2 border-dashed border-slate-200">
+                    <p className="text-xs font-black text-slate-400 uppercase mb-3 tracking-widest">Sản phẩm khả dụng</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-48 overflow-y-auto pr-2">
+                       {isSearchingPart ? (
+                         <div className="col-span-2 text-center py-4"><Loader className="animate-spin mx-auto text-blue-600"/></div>
+                       ) : searchPartResults.length > 0 ? (
+                         searchPartResults.map(p => (
+                            <div 
+                              key={p.id} 
+                              onClick={() => addPartToCombo(p)}
+                              className="flex items-center justify-between p-2 bg-white border rounded-xl hover:border-blue-500 hover:bg-blue-50 cursor-pointer transition-all group"
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <img src={p.image_url || 'https://via.placeholder.com/40'} className="w-8 h-8 object-cover rounded-lg shadow-sm" alt=""/>
+                                <div className="min-w-0">
+                                  <p className="font-bold text-[13px] truncate">{p.name}</p>
+                                  <p className="text-[11px] text-orange-600 font-bold">{formatCurrency(p.price)}</p>
+                                </div>
                               </div>
+                              <Plus size={16} className="text-blue-500 group-hover:scale-125 transition-transform mr-1"/>
                             </div>
-                            <button type="button" onClick={() => addPartToCombo(p)} className="p-1.5 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white"><Plus size={16}/></button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                         ))
+                       ) : (
+                         <p className="col-span-2 text-center py-4 text-sm text-slate-400 italic">
+                            {selectedPartCategoryId || searchPartQuery ? 'Không tìm thấy sản phẩm' : 'Chọn danh mục hoặc tìm tên sản phẩm để bắt đầu'}
+                         </p>
+                       )}
+                    </div>
                   </div>
 
                   {/* Danh sách thành phần đã chọn */}
-                  <div className="flex-1 overflow-y-auto space-y-3">
-                    {formData.combo_items.map((item, index) => (
-                      <div key={index} className="flex items-center gap-4 bg-slate-50 p-4 rounded-xl border">
-                        <img src={item.image_url || 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3'} className="w-12 h-12 object-cover rounded-md" alt=""/>
-                        <div className="flex-1">
-                          <p className="font-bold text-sm line-clamp-1">{item.name}</p>
-                          <p className="text-xs text-slate-500">{formatCurrency(item.price)}</p>
+                  <div className="flex-1 space-y-3">
+                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Đã chọn ({formData.combo_items.length})</p>
+                    <div className="max-h-60 overflow-y-auto pr-2 space-y-3">
+                      {formData.combo_items.map((item, index) => (
+                        <div key={index} className="flex items-center gap-4 bg-white p-4 rounded-2xl border shadow-sm">
+                          <img src={item.image_url || 'https://via.placeholder.com/50'} className="w-12 h-12 object-cover rounded-xl shadow-sm" alt=""/>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-sm truncate">{item.name}</p>
+                            <p className="text-xs text-orange-600 font-bold">{formatCurrency(item.price)}</p>
+                          </div>
+                          <div className="flex items-center bg-slate-50 border rounded-xl overflow-hidden">
+                            <button type="button" onClick={() => updateItemQuantity(item.part_id, item.quantity - 1)} className="px-3 py-1 hover:bg-slate-200 transition-colors">-</button>
+                            <span className="w-8 text-center text-sm font-black">{item.quantity}</span>
+                            <button type="button" onClick={() => updateItemQuantity(item.part_id, item.quantity + 1)} className="px-3 py-1 hover:bg-slate-200 transition-colors">+</button>
+                          </div>
+                          <button type="button" onClick={() => removePartFromCombo(item.part_id)} className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors"><Trash2 size={18}/></button>
                         </div>
-                        <div className="flex items-center bg-white border rounded-lg overflow-hidden">
-                          <button type="button" onClick={() => updateItemQuantity(item.part_id, item.quantity - 1)} className="px-3 py-1 bg-slate-100 hover:bg-slate-200">-</button>
-                          <span className="w-10 text-center text-sm font-bold">{item.quantity}</span>
-                          <button type="button" onClick={() => updateItemQuantity(item.part_id, item.quantity + 1)} className="px-3 py-1 bg-slate-100 hover:bg-slate-200">+</button>
+                      ))}
+                      {formData.combo_items.length === 0 && (
+                        <div className="text-center py-10 border-2 border-dashed rounded-3xl">
+                           <PackageOpen size={48} className="mx-auto text-slate-200 mb-2"/>
+                           <p className="text-sm text-slate-400">Chưa có thành phần nào.</p>
                         </div>
-                        <button type="button" onClick={() => removePartFromCombo(item.part_id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><Trash2 size={18}/></button>
-                      </div>
-                    ))}
-                    {formData.combo_items.length === 0 && <div className="text-center py-10 text-slate-400">Chưa chọn sản phẩm nào cho Combo này.</div>}
+                      )}
+                    </div>
                   </div>
                 </div>
               </form>
             </div>
             <div className="p-6 border-t flex justify-end gap-3 bg-white">
-              <button type="button" onClick={() => setShowModal(false)} className="px-6 py-3 bg-slate-100 font-bold rounded-xl hover:bg-slate-200">Hủy</button>
-              <button type="submit" form="combo-form" disabled={loading} className="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700">
-                {editingCombo ? 'LƯU THAY ĐỔI' : 'TẠO MỚI'}
+              <button type="button" onClick={() => setShowModal(false)} className="px-6 py-3 bg-slate-100 font-bold rounded-xl hover:bg-slate-200 transition-colors">Hủy</button>
+              <button type="submit" form="combo-form" disabled={loading} className="px-8 py-3 bg-blue-600 text-white font-black rounded-xl hover:bg-slate-900 shadow-lg shadow-blue-100 transition-all">
+                {editingCombo ? 'LƯU THAY ĐỔI' : 'TẠO COMBO MỚI'}
               </button>
             </div>
           </div>

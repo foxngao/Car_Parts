@@ -302,3 +302,7 @@ INSERT IGNORE INTO part_reviews (part_id, user_id, rating, comment) VALUES
 (13, 1, 4, N'Cao su chân máy chống rung tốt.'),
 
 
+INSERT INTO garage_partners (name, address, phone) VALUES 
+('Gara Thành Công', '123 Đường ABC, Quận 1, TP.HCM', '0901234567'),
+('Gara Việt Đức', '456 Đường XYZ, Cầu Giấy, Hà Nội', '0912345678');
+
