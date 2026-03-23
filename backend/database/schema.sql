@@ -218,3 +218,26 @@ CREATE TABLE IF NOT EXISTS favorite_parts (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (part_id) REFERENCES parts(id) ON DELETE CASCADE
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS garage_partners (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name NVARCHAR(255) NOT NULL,
+    address TEXT NOT NULL,
+    phone VARCHAR(20),
+    is_active BOOLEAN DEFAULT TRUE
+)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- 2. Bảng lưu trữ lịch hẹn đặt dịch vụ
+CREATE TABLE IF NOT EXISTS service_bookings (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    order_id INT NOT NULL,
+    garage_id INT NOT NULL,
+    booking_date DATETIME NOT NULL,
+    status ENUM('PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED') DEFAULT 'PENDING',
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (order_id) REFERENCES orders(id),
+    FOREIGN KEY (garage_id) REFERENCES garage_partners(id)
+)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

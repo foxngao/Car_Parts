@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
-const db = require('../config/db');
+const authModel = require('../models/auth.model');
 
 // Email transporter
 const transporter = nodemailer.createTransport({
@@ -24,31 +24,22 @@ const register = async (req, res) => {
   try {
     const { username, password, email } = req.body;
 
-    const [existing] = await db.query(
-      'SELECT id FROM users WHERE username = ? OR email = ?',
-      [username, email]
-    );
+    const existing = await authModel.findUserIdByUsernameOrEmail(username, email);
     if (existing.length > 0) {
       return res.status(409).json({ success: false, message: 'Username or email already exists' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const [result] = await db.query(
-      'INSERT INTO users (username, password, email) VALUES (?, ?, ?)',
-      [username, hashedPassword, email]
-    );
+    const result = await authModel.createUser({ username, password: hashedPassword, email });
     const userId = result.insertId;
 
-    await db.query('INSERT INTO user_roles (user_id, role_id) VALUES (?, 2)', [userId]);
+    await authModel.assignDefaultUserRole(userId);
 
     const otpCode = generateOTP();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); 
 
-    await db.query(
-      'INSERT INTO otp_verifications (user_id, otp_code, expires_at) VALUES (?, ?, ?)',
-      [userId, otpCode, expiresAt]
-    );
+    await authModel.createOtpVerification(userId, otpCode, expiresAt);
 
     try {
       await transporter.sendMail({
@@ -82,23 +73,20 @@ const verifyOtp = async (req, res) => {
   try {
     const { email, otp_code } = req.body;
 
-    const [users] = await db.query('SELECT id FROM users WHERE email = ?', [email]);
+    const users = await authModel.findUserIdByEmail(email);
     if (users.length === 0) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
     const userId = users[0].id;
 
-    const [otps] = await db.query(
-      'SELECT id FROM otp_verifications WHERE user_id = ? AND otp_code = ? AND expires_at > NOW() ORDER BY created_at DESC LIMIT 1',
-      [userId, otp_code]
-    );
+    const otps = await authModel.findValidOtpByUserId(userId, otp_code);
 
     if (otps.length === 0) {
       return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
     }
 
-    await db.query('UPDATE users SET is_active = TRUE WHERE id = ?', [userId]);
-    await db.query('DELETE FROM otp_verifications WHERE user_id = ?', [userId]);
+    await authModel.activateUserById(userId);
+    await authModel.deleteOtpsByUserId(userId);
 
     res.json({ success: true, message: 'Account verified successfully. You can now login.' });
   } catch (error) {
@@ -118,16 +106,7 @@ const login = async (req, res) => {
     console.log('Time:', new Date().toISOString());
 
     // Sử dụng GROUP_CONCAT để lấy tất cả roles của user
-    const [users] = await db.query(
-      `SELECT u.id, u.username, u.password, u.email, u.full_name, u.is_active,
-              GROUP_CONCAT(r.name) as roles
-       FROM users u
-       LEFT JOIN user_roles ur ON u.id = ur.user_id
-       LEFT JOIN roles r ON ur.role_id = r.id
-       WHERE u.username = ?
-       GROUP BY u.id`,
-      [username]
-    );
+    const users = await authModel.findLoginUserByUsername(username);
 
     console.log(`Found ${users.length} user(s) with this username`);
 

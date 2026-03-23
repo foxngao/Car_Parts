@@ -1,9 +1,9 @@
-const db = require('../config/db');
+const categoryModel = require('../models/category.model');
 
 // GET /api/v1/categories
 const getAllCategories = async (req, res) => {
   try {
-    const [categories] = await db.query('SELECT * FROM categories ORDER BY name');
+    const categories = await categoryModel.findAllCategories();
     res.json({ success: true, data: categories });
   } catch (error) {
     console.error('Get categories error:', error);
@@ -15,7 +15,7 @@ const getAllCategories = async (req, res) => {
 const createCategory = async (req, res) => {
   try {
     const { name } = req.body;
-    const [result] = await db.query('INSERT INTO categories (name) VALUES (?)', [name]);
+    const result = await categoryModel.createCategory(name);
     res.status(201).json({
       success: true,
       message: 'Category created',
@@ -34,7 +34,7 @@ const createCategory = async (req, res) => {
 const updateCategory = async (req, res) => {
   try {
     const { name } = req.body;
-    const [result] = await db.query('UPDATE categories SET name = ? WHERE id = ?', [name, req.params.id]);
+    const result = await categoryModel.updateCategoryById(req.params.id, name);
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, message: 'Category not found' });
     }
@@ -48,7 +48,7 @@ const updateCategory = async (req, res) => {
 // DELETE /api/v1/admin/categories/:id
 const deleteCategory = async (req, res) => {
   try {
-    const [result] = await db.query('DELETE FROM categories WHERE id = ?', [req.params.id]);
+    const result = await categoryModel.deleteCategoryById(req.params.id);
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, message: 'Category not found' });
     }

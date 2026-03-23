@@ -1,4 +1,4 @@
-const db = require('../config/db');
+const vinModel = require('../models/vin.model');
 
 // ==================== VIN DECODE HELPERS ====================
 
@@ -33,13 +33,7 @@ const decodeVin = async (req, res) => {
     }
 
     const wmi = vin.substring(0, 3);
-    const [wmiResults] = await db.query(
-      `SELECT vwm.*, b.name as brand_name, b.country as brand_country
-       FROM vin_wmi_mappings vwm
-       JOIN brands b ON vwm.brand_id = b.id
-       WHERE vwm.wmi_code = ?`,
-      [wmi]
-    );
+    const wmiResults = await vinModel.findWmiMapping(wmi);
 
     if (wmiResults.length === 0) {
       return res.status(404).json({
@@ -53,22 +47,11 @@ const decodeVin = async (req, res) => {
     const yearChar = vin.charAt(9);
     const year = YEAR_CODES[yearChar.toUpperCase()] || null;
 
-    const [models] = await db.query(
-      'SELECT id, name FROM car_models WHERE brand_id = ? ORDER BY name',
-      [wmiData.brand_id]
-    );
+    const models = await vinModel.findModelsByBrandId(wmiData.brand_id);
 
     let matchedModelYears = [];
     if (year) {
-      const [modelYears] = await db.query(
-        `SELECT my.id, my.year, cm.name as model_name, cm.id as model_id
-         FROM model_years my
-         JOIN car_models cm ON my.model_id = cm.id
-         WHERE cm.brand_id = ? AND my.year = ?
-         ORDER BY cm.name`,
-        [wmiData.brand_id, year]
-      );
-      matchedModelYears = modelYears;
+      matchedModelYears = await vinModel.findModelYearsByBrandIdAndYear(wmiData.brand_id, year);
     }
 
     res.json({
@@ -129,38 +112,12 @@ const searchByVin = async (req, res) => {
     }
 
     const brand = wmiResults[0];
-    let modelYearCondition = '';
-    let params = [brand.brand_id];
-
-    if (year) {
-      modelYearCondition = 'AND my.year = ?';
-      params.push(year);
-    }
-
-    // Đếm tổng phụ tùng tương thích
-    const [countResult] = await db.query(
-      `SELECT COUNT(DISTINCT p.id) as total
-       FROM parts p
-       JOIN part_compatibility pc ON p.id = pc.part_id
-       JOIN model_years my ON pc.model_year_id = my.id
-       JOIN car_models cm ON my.model_id = cm.id
-       WHERE cm.brand_id = ? ${modelYearCondition}`,
-      params
-    );
-    const total = countResult[0].total;
-
-    // Lấy danh sách phụ tùng
-    const [parts] = await db.query(
-      `SELECT DISTINCT p.*, c.name as category_name
-       FROM parts p
-       JOIN categories c ON p.category_id = c.id
-       JOIN part_compatibility pc ON p.id = pc.part_id
-       JOIN model_years my ON pc.model_year_id = my.id
-       JOIN car_models cm ON my.model_id = cm.id
-       WHERE cm.brand_id = ? ${modelYearCondition}
-       ORDER BY p.name
-       LIMIT ? OFFSET ?`,
-      [...params, parseInt(limit), parseInt(offset)]
+    const total = await vinModel.countCompatiblePartsByBrandAndYear(brand.brand_id, year);
+    const parts = await vinModel.findCompatiblePartsByBrandAndYear(
+      brand.brand_id,
+      year,
+      parseInt(limit),
+      parseInt(offset)
     );
 
     res.json({

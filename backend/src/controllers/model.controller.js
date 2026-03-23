@@ -1,10 +1,9 @@
 const modelModel = require('../models/model.model');
-const modelYearModel = require('../models/modelYear.model');
 
 // GET /api/v1/models/:id/years
 const getYearsByModel = async (req, res) => {
   try {
-    const years = await modelYearModel.findByModelId(req.params.id);
+    const years = await modelModel.findByModelId(req.params.id);
     res.json({ success: true, data: years });
   } catch (error) {
     console.error('Get years error:', error);
@@ -61,7 +60,7 @@ const deleteModel = async (req, res) => {
 const createModelYear = async (req, res) => {
   try {
     const { model_id, year } = req.body;
-    const result = await modelYearModel.createModelYear({ model_id, year });
+    const result = await modelModel.createModelYear({ model_id, year });
     res.status(201).json({
       success: true,
       message: 'Model year created',
@@ -79,7 +78,7 @@ const createModelYear = async (req, res) => {
 // DELETE /api/v1/admin/model-years/:id
 const deleteModelYear = async (req, res) => {
   try {
-    const result = await modelYearModel.deleteModelYearById(req.params.id);
+    const result = await modelModel.deleteModelYearById(req.params.id);
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, message: 'Model year not found' });
     }

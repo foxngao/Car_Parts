@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-
+const bookingRoutes = require('./src/routes/booking.routes');
 const app = express();
 
 // Middleware
@@ -35,7 +35,7 @@ app.use('/api/v1/compare', require('./src/routes/compare.routes'));
 app.use('/api/v1/favorites', require('./src/routes/favorite.routes'));
 app.use('/api/v1/combos', require('./src/routes/combo.routes'));
 app.use('/api/v1', require('./src/routes/review.routes'));
-
+app.use('/api/v1/bookings', bookingRoutes);
 // Health check
 app.get('/', (req, res) => {
   res.json({ message: 'Car Parts API is running 🚗' });

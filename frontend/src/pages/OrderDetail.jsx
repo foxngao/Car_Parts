@@ -17,7 +17,9 @@ import {
   Truck,
   Printer,
   Download,
-  Loader
+  Loader,
+  Wrench,
+  Check // Import thêm icon Check
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -92,7 +94,6 @@ const OrderDetail = () => {
   };
 
   const handleDownload = () => {
-    // Tạo nội dung hóa đơn
     const content = `
       HÓA ĐƠN ĐƠN HÀNG #${order.id}
       Ngày đặt: ${formatDate(order.order_date)}
@@ -133,7 +134,6 @@ const OrderDetail = () => {
   return (
     <div className="min-h-screen bg-slate-50 pt-32 pb-20 px-4 print:pt-4">
       <div className="max-w-5xl mx-auto">
-        {/* Back button - Ẩn khi in */}
         <button
           onClick={() => navigate('/orders')}
           className="flex items-center gap-2 text-slate-500 hover:text-blue-600 transition-colors mb-8 print:hidden"
@@ -142,7 +142,6 @@ const OrderDetail = () => {
           Quay lại lịch sử đơn hàng
         </button>
 
-        {/* Order card */}
         <div className="bg-white rounded-[32px] shadow-xl border border-gray-100 overflow-hidden print:shadow-none print:border-none">
           {/* Header */}
           <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white p-8 print:bg-white print:text-black print:border-b print:border-gray-200">
@@ -165,7 +164,7 @@ const OrderDetail = () => {
           </div>
 
           <div className="p-8">
-            {/* Action buttons - Ẩn khi in */}
+            {/* Action buttons */}
             <div className="flex items-center justify-end gap-3 mb-8 print:hidden">
               <button
                 onClick={handlePrint}
@@ -183,9 +182,44 @@ const OrderDetail = () => {
               </button>
             </div>
 
-            {/* Customer & Order Info */}
+            {/* --- PHẦN SỬA ĐỔI: CHỨC NĂNG ĐẶT LỊCH DỊCH VỤ LẮP ĐẶT --- */}
+            {/* 1. Chỉ hiện nút đặt lịch nếu CHƯA có booking_id */}
+            {(order.status === 'PAID' || order.status === 'COMPLETED' || order.status === 'SHIPPING') && !order.booking_id && (
+              <div className="mb-8 p-6 bg-blue-50 border border-blue-100 rounded-[24px] flex flex-col md:flex-row justify-between items-center gap-4 print:hidden">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white shrink-0">
+                    <Wrench size={24} />
+                  </div>
+                  <div>
+                    <p className="font-bold text-blue-900 text-lg">Bạn cần hỗ trợ lắp đặt phụ tùng?</p>
+                    <p className="text-sm text-blue-700">Hãy đặt lịch hẹn với các gara đối tác chuyên nghiệp của chúng tôi ngay hôm nay.</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => navigate('/booking', { state: { orderId: order.id } })}
+                  className="w-full md:w-auto px-8 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 flex items-center justify-center gap-2"
+                >
+                  <Calendar size={18} />
+                  ĐẶT LỊCH NGAY
+                </button>
+              </div>
+            )}
+
+            {/* 2. Hiển thị thông báo nếu ĐÃ có booking_id */}
+            {order.booking_id && (
+              <div className="mb-8 p-6 bg-green-50 border border-green-100 rounded-[24px] flex items-center gap-4 print:hidden">
+                <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center text-white shrink-0">
+                  <Check size={24} />
+                </div>
+                <div>
+                  <p className="font-bold text-green-900 text-lg">Đã đặt lịch lắp đặt</p>
+                  <p className="text-sm text-green-700">Đơn hàng này đã được đăng ký dịch vụ lắp đặt thành công. Vui lòng kiểm tra lịch hẹn trong hồ sơ của bạn.</p>
+                </div>
+              </div>
+            )}
+            {/* ------------------------------------------------------ */}
+
             <div className="grid md:grid-cols-2 gap-8 mb-8">
-              {/* Customer info */}
               <div className="space-y-4">
                 <h2 className="font-bold text-lg flex items-center gap-2">
                   <User size={20} className="text-blue-600" />
@@ -207,7 +241,6 @@ const OrderDetail = () => {
                 </div>
               </div>
 
-              {/* Order info */}
               <div className="space-y-4">
                 <h2 className="font-bold text-lg flex items-center gap-2">
                   <Package size={20} className="text-blue-600" />
@@ -221,11 +254,11 @@ const OrderDetail = () => {
                   <div className="flex justify-between">
                     <span className="text-slate-500">Trạng thái thanh toán:</span>
                     <span className={`font-medium ${
-                      order.status === 'PAID' || order.status === 'COMPLETED' 
+                      order.status === 'PAID' || order.status === 'COMPLETED' || order.status === 'SHIPPING'
                         ? 'text-green-600' 
                         : 'text-yellow-600'
                     }`}>
-                      {order.status === 'PAID' || order.status === 'COMPLETED' 
+                      {order.status === 'PAID' || order.status === 'COMPLETED' || order.status === 'SHIPPING'
                         ? 'Đã thanh toán' 
                         : 'Chưa thanh toán'}
                     </span>
@@ -238,7 +271,6 @@ const OrderDetail = () => {
               </div>
             </div>
 
-            {/* Order items */}
             <div className="mb-8">
               <h2 className="font-bold text-lg mb-4 flex items-center gap-2">
                 <Package size={20} className="text-blue-600" />
@@ -246,10 +278,10 @@ const OrderDetail = () => {
               </h2>
               <div className="space-y-4">
                 {order.items?.map((item, index) => (
-                  <div key={item.id || index} className="flex gap-4 p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
+                  <div key={item.id || index} className="flex gap-4 p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors border border-transparent hover:border-slate-200">
                     <img
                       src={item.image_url || 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&q=80&w=100'}
-                      className="w-20 h-20 rounded-xl object-cover"
+                      className="w-20 h-20 rounded-xl object-cover shadow-sm"
                       alt={item.part_name}
                     />
                     <div className="flex-1">
@@ -271,7 +303,6 @@ const OrderDetail = () => {
               </div>
             </div>
 
-            {/* Order summary */}
             <div className="border-t pt-6">
               <div className="max-w-md ml-auto">
                 <div className="space-y-3">
@@ -286,13 +317,12 @@ const OrderDetail = () => {
                   <div className="h-px bg-slate-200 my-2"></div>
                   <div className="flex justify-between text-xl">
                     <span className="font-bold">Tổng cộng:</span>
-                    <span className="font-black text-orange-600">{formatCurrency(order.total_amount)}</span>
+                    <span className="font-black text-orange-600 text-2xl">{formatCurrency(order.total_amount)}</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Order timeline - Ẩn khi in */}
             <div className="mt-8 pt-8 border-t print:hidden">
               <h2 className="font-bold text-lg mb-6">Lịch trình đơn hàng</h2>
               <div className="space-y-4">

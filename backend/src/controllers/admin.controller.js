@@ -1,5 +1,5 @@
-const db = require('../config/db');
 const bcrypt = require('bcryptjs');
+const adminModel = require('../models/admin.model');
 
 // ==================== DASHBOARD STATISTICS ====================
 
@@ -33,105 +33,25 @@ const getDashboardStats = async (req, res) => {
     const endDateStr = endDate.toISOString().split('T')[0];
     
     // 1. Thống kê tổng quan
-    const [overview] = await db.query(`
-      SELECT 
-        (SELECT COUNT(*) FROM users) as total_users,
-        (SELECT COUNT(*) FROM users WHERE created_at >= ?) as new_users,
-        (SELECT COUNT(*) FROM orders) as total_orders,
-        (SELECT COUNT(*) FROM orders WHERE order_date >= ?) as new_orders,
-        (SELECT COUNT(*) FROM parts) as total_products,
-        (SELECT SUM(stock_quantity) FROM parts) as total_stock,
-        (SELECT COUNT(*) FROM parts WHERE stock_quantity = 0) as out_of_stock,
-        (SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE status IN ('PAID', 'COMPLETED')) as total_revenue,
-        (SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE status IN ('PAID', 'COMPLETED') AND order_date >= ?) as revenue_this_period,
-        (SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE status IN ('PAID', 'COMPLETED') AND order_date < ? AND order_date >= DATE_SUB(?, INTERVAL 1 DAY)) as revenue_previous_period
-    `, [startDateStr, startDateStr, startDateStr, startDateStr, startDateStr]);
+    const overview = await adminModel.getDashboardOverview(startDateStr);
 
     // 2. Doanh thu theo ngày
-    const [revenueByDate] = await db.query(`
-      SELECT 
-        DATE(order_date) as date,
-        COUNT(*) as order_count,
-        COALESCE(SUM(total_amount), 0) as revenue
-      FROM orders
-      WHERE status IN ('PAID', 'COMPLETED')
-        AND order_date >= ?
-      GROUP BY DATE(order_date)
-      ORDER BY date DESC
-    `, [startDateStr]);
+    const revenueByDate = await adminModel.getDashboardRevenueByDate(startDateStr);
 
     // 3. Phân bố trạng thái đơn hàng
-    const [orderStatus] = await db.query(`
-      SELECT 
-        status,
-        COUNT(*) as count,
-        COALESCE(SUM(total_amount), 0) as total
-      FROM orders
-      GROUP BY status
-    `);
+    const orderStatus = await adminModel.getDashboardOrderStatus();
 
     // 4. Sản phẩm bán chạy
-    const [bestSelling] = await db.query(`
-      SELECT 
-        p.id,
-        p.name,
-        p.price,
-        p.image_url,
-        c.name as category_name,
-        COUNT(oi.id) as order_count,
-        SUM(oi.quantity) as total_sold,
-        COALESCE(SUM(oi.quantity * oi.price_at_purchase), 0) as total_revenue
-      FROM order_items oi
-      JOIN parts p ON oi.part_id = p.id
-      JOIN categories c ON p.category_id = c.id
-      JOIN orders o ON oi.order_id = o.id
-      WHERE o.status IN ('PAID', 'COMPLETED')
-      GROUP BY p.id
-      ORDER BY total_sold DESC
-      LIMIT 10
-    `);
+    const bestSelling = await adminModel.getDashboardBestSelling();
 
     // 5. Thống kê người dùng mới theo ngày
-    const [newUsersByDate] = await db.query(`
-      SELECT 
-        DATE(created_at) as date,
-        COUNT(*) as count
-      FROM users
-      WHERE created_at >= ?
-      GROUP BY DATE(created_at)
-      ORDER BY date DESC
-    `, [startDateStr]);
+    const newUsersByDate = await adminModel.getDashboardNewUsersByDate(startDateStr);
 
     // 6. Thống kê theo danh mục
-    const [categoryStats] = await db.query(`
-      SELECT 
-        c.id,
-        c.name,
-        COUNT(DISTINCT p.id) as product_count,
-        COALESCE(SUM(oi.quantity), 0) as items_sold,
-        COALESCE(SUM(oi.quantity * oi.price_at_purchase), 0) as revenue
-      FROM categories c
-      LEFT JOIN parts p ON c.id = p.category_id
-      LEFT JOIN order_items oi ON p.id = oi.part_id
-      LEFT JOIN orders o ON oi.order_id = o.id AND o.status IN ('PAID', 'COMPLETED')
-      GROUP BY c.id
-    `);
+    const categoryStats = await adminModel.getDashboardCategoryStats();
 
     // 7. Đơn hàng gần đây
-    const [recentOrders] = await db.query(`
-      SELECT 
-        o.id,
-        o.total_amount,
-        o.status,
-        o.order_date,
-        u.username,
-        u.full_name,
-        u.email
-      FROM orders o
-      JOIN users u ON o.user_id = u.id
-      ORDER BY o.order_date DESC
-      LIMIT 10
-    `);
+    const recentOrders = await adminModel.getDashboardRecentOrders();
 
     // Tính phần trăm thay đổi
     const currentRevenue = parseFloat(overview[0].revenue_this_period) || 0;
@@ -187,17 +107,7 @@ const getDetailedStatistics = async (req, res) => {
     const endStr = end.toISOString().split('T')[0];
 
     // 1. Tổng quan doanh thu
-    const [revenueSummary] = await db.query(`
-      SELECT 
-        COUNT(*) as total_orders,
-        COALESCE(SUM(total_amount), 0) as total_revenue,
-        COALESCE(AVG(total_amount), 0) as avg_order_value,
-        MAX(total_amount) as max_order,
-        MIN(total_amount) as min_order
-      FROM orders
-      WHERE status IN ('PAID', 'COMPLETED')
-        AND order_date BETWEEN ? AND ?
-    `, [startStr, endStr]);
+    const revenueSummary = await adminModel.getDetailedRevenueSummary(startStr, endStr);
 
     // 2. Doanh thu theo ngày/tuần/tháng
     let groupByClause = '';
@@ -215,135 +125,31 @@ const getDetailedStatistics = async (req, res) => {
         groupByClause = 'DATE(order_date)';
     }
 
-    const [revenueByTime] = await db.query(`
-      SELECT 
-        ${groupByClause} as period,
-        COUNT(*) as order_count,
-        COALESCE(SUM(total_amount), 0) as revenue
-      FROM orders
-      WHERE status IN ('PAID', 'COMPLETED')
-        AND order_date BETWEEN ? AND ?
-      GROUP BY ${groupByClause}
-      ORDER BY period DESC
-    `, [startStr, endStr]);
+    const revenueByTime = await adminModel.getDetailedRevenueByTime(groupByClause, startStr, endStr);
 
     // 3. Thống kê theo sản phẩm
-    const [productStats] = await db.query(`
-      SELECT 
-        p.id,
-        p.name,
-        p.price,
-        c.name as category_name,
-        COUNT(DISTINCT o.id) as order_count,
-        SUM(oi.quantity) as total_quantity,
-        COALESCE(SUM(oi.quantity * oi.price_at_purchase), 0) as total_revenue
-      FROM parts p
-      JOIN categories c ON p.category_id = c.id
-      LEFT JOIN order_items oi ON p.id = oi.part_id
-      LEFT JOIN orders o ON oi.order_id = o.id AND o.status IN ('PAID', 'COMPLETED') AND o.order_date BETWEEN ? AND ?
-      GROUP BY p.id
-      ORDER BY total_revenue DESC
-    `, [startStr, endStr]);
+    const productStats = await adminModel.getDetailedProductStats(startStr, endStr);
 
     // 4. Thống kê theo danh mục
-    const [categoryStats] = await db.query(`
-      SELECT 
-        c.id,
-        c.name,
-        COUNT(DISTINCT p.id) as product_count,
-        COUNT(DISTINCT o.id) as order_count,
-        SUM(oi.quantity) as items_sold,
-        COALESCE(SUM(oi.quantity * oi.price_at_purchase), 0) as revenue
-      FROM categories c
-      LEFT JOIN parts p ON c.id = p.category_id
-      LEFT JOIN order_items oi ON p.id = oi.part_id
-      LEFT JOIN orders o ON oi.order_id = o.id AND o.status IN ('PAID', 'COMPLETED') AND o.order_date BETWEEN ? AND ?
-      GROUP BY c.id
-      ORDER BY revenue DESC
-    `, [startStr, endStr]);
+    const categoryStats = await adminModel.getDetailedCategoryStats(startStr, endStr);
 
     // 5. Thống kê theo khách hàng
-    const [customerStats] = await db.query(`
-      SELECT 
-        u.id,
-        u.username,
-        u.full_name,
-        u.email,
-        COUNT(DISTINCT o.id) as order_count,
-        COALESCE(SUM(o.total_amount), 0) as total_spent,
-        COALESCE(AVG(o.total_amount), 0) as avg_order_value,
-        MAX(o.order_date) as last_order_date
-      FROM users u
-      LEFT JOIN orders o ON u.id = o.user_id AND o.status IN ('PAID', 'COMPLETED') AND o.order_date BETWEEN ? AND ?
-      GROUP BY u.id
-      HAVING order_count > 0
-      ORDER BY total_spent DESC
-      LIMIT 20
-    `, [startStr, endStr]);
+    const customerStats = await adminModel.getDetailedCustomerStats(startStr, endStr);
 
     // 6. Thống kê theo thời gian trong ngày
-    const [hourlyStats] = await db.query(`
-      SELECT 
-        HOUR(order_date) as hour,
-        COUNT(*) as order_count,
-        COALESCE(SUM(total_amount), 0) as revenue
-      FROM orders
-      WHERE status IN ('PAID', 'COMPLETED')
-        AND order_date BETWEEN ? AND ?
-      GROUP BY HOUR(order_date)
-      ORDER BY hour
-    `, [startStr, endStr]);
+    const hourlyStats = await adminModel.getDetailedHourlyStats(startStr, endStr);
 
     // 7. Thống kê theo ngày trong tuần
-    const [weekdayStats] = await db.query(`
-      SELECT 
-        DAYOFWEEK(order_date) as weekday,
-        COUNT(*) as order_count,
-        COALESCE(SUM(total_amount), 0) as revenue
-      FROM orders
-      WHERE status IN ('PAID', 'COMPLETED')
-        AND order_date BETWEEN ? AND ?
-      GROUP BY DAYOFWEEK(order_date)
-      ORDER BY weekday
-    `, [startStr, endStr]);
+    const weekdayStats = await adminModel.getDetailedWeekdayStats(startStr, endStr);
 
     // 8. Top sản phẩm bán chạy nhất
-    const [topProducts] = await db.query(`
-      SELECT 
-        p.id,
-        p.name,
-        p.price,
-        c.name as category_name,
-        SUM(oi.quantity) as total_sold,
-        COALESCE(SUM(oi.quantity * oi.price_at_purchase), 0) as total_revenue
-      FROM order_items oi
-      JOIN parts p ON oi.part_id = p.id
-      JOIN categories c ON p.category_id = c.id
-      JOIN orders o ON oi.order_id = o.id
-      WHERE o.status IN ('PAID', 'COMPLETED')
-        AND o.order_date BETWEEN ? AND ?
-      GROUP BY p.id
-      ORDER BY total_sold DESC
-      LIMIT 10
-    `, [startStr, endStr]);
+    const topProducts = await adminModel.getDetailedTopProducts(startStr, endStr);
 
     // 9. Khách hàng mới trong kỳ
-    const [newCustomers] = await db.query(`
-      SELECT 
-        COUNT(*) as total,
-        DATE(created_at) as date
-      FROM users
-      WHERE created_at BETWEEN ? AND ?
-      GROUP BY DATE(created_at)
-      ORDER BY date DESC
-    `, [startStr, endStr]);
+    const newCustomers = await adminModel.getDetailedNewCustomers(startStr, endStr);
 
     // 10. Tỷ lệ chuyển đổi (số người đặt hàng / tổng số người)
-    const [conversionRate] = await db.query(`
-      SELECT 
-        (SELECT COUNT(DISTINCT user_id) FROM orders WHERE order_date BETWEEN ? AND ?) as buyers,
-        (SELECT COUNT(*) FROM users WHERE created_at <= ?) as total_users
-    `, [startStr, endStr, endStr]);
+    const conversionRate = await adminModel.getDetailedConversionRate(startStr, endStr);
 
     res.json({
       success: true,
@@ -388,15 +194,7 @@ const getDetailedStatistics = async (req, res) => {
 // GET /api/v1/admin/users - Lấy danh sách users
 const getAllUsers = async (req, res) => {
   try {
-    const [users] = await db.query(
-      `SELECT u.id, u.username, u.email, u.full_name, u.phone, u.address, 
-              u.is_active, u.created_at, GROUP_CONCAT(r.name) as roles
-       FROM users u
-       LEFT JOIN user_roles ur ON u.id = ur.user_id
-       LEFT JOIN roles r ON ur.role_id = r.id
-       GROUP BY u.id
-       ORDER BY u.created_at DESC`
-    );
+    const users = await adminModel.findAllUsers();
     
     // Xử lý role cho mỗi user
     const formattedUsers = users.map(user => {
@@ -431,10 +229,7 @@ const createUser = async (req, res) => {
     const { username, email, password, full_name, phone, address, role } = req.body;
     
     // Kiểm tra username/email đã tồn tại chưa
-    const [existing] = await db.query(
-      'SELECT id FROM users WHERE username = ? OR email = ?',
-      [username, email]
-    );
+    const existing = await adminModel.findExistingUserByUsernameOrEmail(username, email);
     
     if (existing.length > 0) {
       return res.status(409).json({ 
@@ -447,20 +242,20 @@ const createUser = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     
     // Thêm user
-    const [result] = await db.query(
-      `INSERT INTO users (username, password, email, full_name, phone, address, is_active) 
-       VALUES (?, ?, ?, ?, ?, ?, 1)`,
-      [username, hashedPassword, email, full_name || null, phone || null, address || null]
-    );
+    const result = await adminModel.createUser({
+      username,
+      password: hashedPassword,
+      email,
+      full_name,
+      phone,
+      address
+    });
     
     const userId = result.insertId;
     
     // Thêm role
     const roleId = role === 'admin' ? 1 : 2;
-    await db.query(
-      'INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)',
-      [userId, roleId]
-    );
+    await adminModel.assignUserRole(userId, roleId);
     
     res.status(201).json({
       success: true,
@@ -480,22 +275,16 @@ const updateUser = async (req, res) => {
     const { full_name, phone, address, role, is_active } = req.body;
     
     // Cập nhật thông tin user
-    await db.query(
-      `UPDATE users SET full_name = ?, phone = ?, address = ?, is_active = ? WHERE id = ?`,
-      [full_name || null, phone || null, address || null, is_active, id]
-    );
+    await adminModel.updateUserById(id, { full_name, phone, address, is_active });
     
     // Cập nhật role nếu có
     if (role) {
       // Xóa role cũ
-      await db.query('DELETE FROM user_roles WHERE user_id = ?', [id]);
+      await adminModel.deleteUserRolesByUserId(id);
       
       // Thêm role mới
       const roleId = role === 'admin' ? 1 : 2;
-      await db.query(
-        'INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)',
-        [id, roleId]
-      );
+      await adminModel.assignUserRole(id, roleId);
     }
     
     res.json({ success: true, message: 'Cập nhật người dùng thành công' });
@@ -511,7 +300,7 @@ const deleteUser = async (req, res) => {
     const { id } = req.params;
     
     // Kiểm tra user có đơn hàng không?
-    const [orders] = await db.query('SELECT id FROM orders WHERE user_id = ?', [id]);
+    const orders = await adminModel.findOrdersByUserId(id);
     
     if (orders.length > 0) {
       return res.status(400).json({ 
@@ -521,7 +310,7 @@ const deleteUser = async (req, res) => {
     }
     
     // Xóa user (các bảng liên quan sẽ tự động xóa nhờ ON DELETE CASCADE)
-    await db.query('DELETE FROM users WHERE id = ?', [id]);
+    await adminModel.deleteUserById(id);
     
     res.json({ success: true, message: 'Xóa người dùng thành công' });
   } catch (error) {
@@ -534,10 +323,7 @@ const deleteUser = async (req, res) => {
 const toggleUserStatus = async (req, res) => {
   try {
     const { is_active } = req.body;
-    const [result] = await db.query(
-      'UPDATE users SET is_active = ? WHERE id = ?',
-      [is_active, req.params.id]
-    );
+    const result = await adminModel.updateUserStatusById(req.params.id, is_active);
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
@@ -565,48 +351,16 @@ const getRevenueStats = async (req, res) => {
     }
 
     // Total revenue
-    const [totalRevenue] = await db.query(
-      `SELECT COALESCE(SUM(total_amount), 0) as total_revenue,
-              COUNT(*) as total_orders
-       FROM orders o
-       WHERE o.status IN ('PAID', 'COMPLETED') ${dateFilter}`,
-      params
-    );
+    const totalRevenue = await adminModel.getRevenueSummary(dateFilter, params);
 
     // Revenue by date
-    const [revenueByDate] = await db.query(
-      `SELECT DATE(o.order_date) as date,
-              SUM(o.total_amount) as revenue,
-              COUNT(*) as order_count
-       FROM orders o
-       WHERE o.status IN ('PAID', 'COMPLETED') ${dateFilter}
-       GROUP BY DATE(o.order_date)
-       ORDER BY date DESC`,
-      params
-    );
+    const revenueByDate = await adminModel.getRevenueByDate(dateFilter, params);
 
     // Best-selling parts
-    const [bestSelling] = await db.query(
-      `SELECT p.id, p.name, p.price,
-              SUM(oi.quantity) as total_sold,
-              SUM(oi.quantity * oi.price_at_purchase) as total_revenue
-       FROM order_items oi
-       JOIN parts p ON oi.part_id = p.id
-       JOIN orders o ON oi.order_id = o.id
-       WHERE o.status IN ('PAID', 'COMPLETED') ${dateFilter}
-       GROUP BY p.id, p.name, p.price
-       ORDER BY total_sold DESC
-       LIMIT 10`,
-      params
-    );
+    const bestSelling = await adminModel.getRevenueBestSellingParts(dateFilter, params);
 
     // Order status breakdown
-    const [statusBreakdown] = await db.query(
-      `SELECT status, COUNT(*) as count
-       FROM orders ${dateFilter ? 'WHERE order_date BETWEEN ? AND ?' : ''}
-       GROUP BY status`,
-      params
-    );
+    const statusBreakdown = await adminModel.getRevenueStatusBreakdown(dateFilter, params);
 
     res.json({
       success: true,
