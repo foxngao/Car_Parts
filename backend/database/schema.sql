@@ -103,6 +103,7 @@ CREATE TABLE IF NOT EXISTS parts (
   price DECIMAL(12, 2) NOT NULL DEFAULT 0,
   stock_quantity INT NOT NULL DEFAULT 0,
   image_url VARCHAR(500) DEFAULT NULL,
+  is_combo BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
@@ -114,6 +115,15 @@ CREATE TABLE IF NOT EXISTS part_compatibility (
   PRIMARY KEY (part_id, model_year_id),
   FOREIGN KEY (part_id) REFERENCES parts(id) ON DELETE CASCADE,
   FOREIGN KEY (model_year_id) REFERENCES model_years(id) ON DELETE CASCADE
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS combo_items (
+  combo_id INT NOT NULL,
+  part_id INT NOT NULL,
+  quantity INT NOT NULL DEFAULT 1,
+  PRIMARY KEY (combo_id, part_id),
+  FOREIGN KEY (combo_id) REFERENCES parts(id) ON DELETE CASCADE,
+  FOREIGN KEY (part_id) REFERENCES parts(id) ON DELETE CASCADE
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- ========== SALES ==========
@@ -198,4 +208,13 @@ CREATE TABLE IF NOT EXISTS part_reviews (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   UNIQUE KEY unique_user_part_review (user_id, part_id),
   INDEX idx_part_rating (part_id, rating)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS favorite_parts (
+  user_id INT NOT NULL,
+  part_id INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, part_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (part_id) REFERENCES parts(id) ON DELETE CASCADE
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

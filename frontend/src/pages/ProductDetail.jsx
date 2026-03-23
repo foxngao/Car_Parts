@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import productApi from '../api/productApi';
 import cartApi from '../api/cartApi';
+import { favoriteApi } from '../api/favoriteApi';
+import { comboApi } from '../api/comboApi';
 import { useAuth } from '../contexts/AuthContext';
 import { formatCurrency } from '../utils/formatters';
-import { CheckCircle, ShoppingCart, Shield, Truck, Clock, ChevronLeft, Plus, Minus } from 'lucide-react';
+import { CheckCircle, ShoppingCart, Shield, Truck, Clock, ChevronLeft, Plus, Minus, Heart, PackageOpen } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const ProductDetail = () => {
@@ -15,6 +17,7 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [addingToCart, setAddingToCart] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
 
   useEffect(() => {
     fetchProduct();
@@ -23,7 +26,22 @@ const ProductDetail = () => {
   const fetchProduct = async () => {
     try {
       const res = await productApi.getById(id);
-      setPart(res.data.data);
+      let partData = res.data.data;
+
+      if (partData.is_combo) {
+        try {
+          const comboRes = await comboApi.getComboDetails(id);
+          partData = comboRes.data.data;
+        } catch (e) {
+          console.error('Failed to fetch combo details', e);
+        }
+      }
+
+      setPart(partData);
+      if (isAuthenticated) {
+        const favRes = await favoriteApi.checkFavorite(id);
+        setIsFavorite(favRes.data.isFavorite);
+      }
     } catch (error) {
       toast.error('Không tìm thấy sản phẩm');
       navigate('/');
@@ -54,6 +72,20 @@ const ProductDetail = () => {
       toast.error(error.response?.data?.message || 'Thêm vào giỏ thất bại');
     } finally {
       setAddingToCart(false);
+    }
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để yêu thích sản phẩm');
+      return;
+    }
+    try {
+      const res = await favoriteApi.toggleFavorite(part.id);
+      setIsFavorite(res.data.isFavorite);
+      toast.success(res.data.message);
+    } catch (error) {
+      toast.error('Có lỗi xảy ra');
     }
   };
 
@@ -105,8 +137,19 @@ const ProductDetail = () => {
               {part.description}
             </p>
 
-            <div className="text-5xl font-black text-orange-600 mb-10">
-              {formatCurrency(part.price)}
+            <div className="flex items-center justify-between mb-10">
+              <div className="text-5xl font-black text-orange-600">
+                {formatCurrency(part.price)}
+              </div>
+              <button
+                onClick={handleToggleFavorite}
+                className={`p-4 rounded-2xl shadow-sm border transition-all ${
+                  isFavorite ? 'bg-red-50 text-red-500 border-red-100' : 'bg-white text-slate-400 border-slate-200 hover:text-red-500'
+                }`}
+                title={isFavorite ? 'Bỏ yêu thích' : 'Yêu thích'}
+              >
+                <Heart size={32} fill={isFavorite ? 'currentColor' : 'none'} />
+              </button>
             </div>
 
             {/* Stock status */}
@@ -118,7 +161,7 @@ const ProductDetail = () => {
             </div>
 
             {/* Compatibility */}
-            {part.compatible_vehicles?.length > 0 && (
+            {part.compatible_vehicles?.length > 0 && !part.is_combo && (
               <div className="bg-slate-50 p-8 rounded-3xl border border-dashed border-slate-300 mb-10">
                 <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
                   <CheckCircle className="text-green-500" size={20} />
@@ -132,6 +175,30 @@ const ProductDetail = () => {
                     >
                       {v.brand_name} {v.model_name} ({v.year})
                     </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Combo Items */}
+            {part.is_combo && part.items && part.items.length > 0 && (
+              <div className="bg-blue-50/50 p-6 rounded-3xl border border-dashed border-blue-200 mb-10">
+                <h3 className="font-bold text-blue-900 mb-4 flex items-center gap-2">
+                  <PackageOpen className="text-blue-500" size={20} />
+                  Combo bao gồm:
+                </h3>
+                <div className="space-y-3">
+                  {part.items.map((item, index) => (
+                    <div key={index} className="flex items-center gap-4 bg-white p-3 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-slate-100">
+                      <img src={item.image_url} alt={item.name} className="w-14 h-14 rounded-xl object-cover bg-slate-50" />
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-bold text-slate-800 text-sm line-clamp-1">{item.name}</h4>
+                        <p className="text-xs text-slate-500 mt-0.5">Số lượng: <span className="font-bold text-slate-700">{item.combo_quantity}</span></p>
+                      </div>
+                      <div className="text-sm font-bold text-slate-300 line-through">
+                        {formatCurrency(item.price)}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>

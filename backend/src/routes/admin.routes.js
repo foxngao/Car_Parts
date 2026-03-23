@@ -117,6 +117,8 @@ router.post('/parts', [
   body('name').trim().notEmpty().withMessage('Part name is required'),
   body('price').isFloat({ min: 0 }).withMessage('Price must be a non-negative number'),
   body('stock_quantity').isInt({ min: 0 }).withMessage('Stock must be a non-negative integer'),
+  body('is_combo').optional().isBoolean(),
+  body('combo_items').optional().isArray(),
   validate
 ], createPart);
 
@@ -125,6 +127,8 @@ router.put('/parts/:id', [
   body('name').trim().notEmpty().withMessage('Part name is required'),
   body('price').isFloat({ min: 0 }).withMessage('Price must be a non-negative number'),
   body('stock_quantity').isInt({ min: 0 }).withMessage('Stock must be a non-negative integer'),
+  body('is_combo').optional().isBoolean(),
+  body('combo_items').optional().isArray(),
   validate
 ], updatePart);
 

@@ -29,7 +29,8 @@ import {
   CreditCard,
   XCircle,
   Car,
-  GitCompareArrows
+  GitCompareArrows,
+  PackageOpen
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -208,6 +209,7 @@ const Header = () => {
   const navLinks = [
     { path: '/', label: 'TRANG CHỦ', icon: Home },
     { path: '/search', label: 'SẢN PHẨM', icon: Package },
+    { path: '/combos', label: 'COMBO ƯU ĐÃI', icon: PackageOpen },
     { path: '/compare', label: 'SO SÁNH', icon: GitCompareArrows, badge: compareCount },
     { path: '/about', label: 'GIỚI THIỆU', icon: Info },
     { path: '/contact', label: 'LIÊN HỆ', icon: Phone },
