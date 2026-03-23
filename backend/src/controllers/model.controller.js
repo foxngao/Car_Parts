@@ -1,12 +1,10 @@
-const db = require('../config/db');
+const modelModel = require('../models/model.model');
+const modelYearModel = require('../models/modelYear.model');
 
 // GET /api/v1/models/:id/years
 const getYearsByModel = async (req, res) => {
   try {
-    const [years] = await db.query(
-      'SELECT * FROM model_years WHERE model_id = ? ORDER BY year DESC',
-      [req.params.id]
-    );
+    const years = await modelYearModel.findByModelId(req.params.id);
     res.json({ success: true, data: years });
   } catch (error) {
     console.error('Get years error:', error);
@@ -18,10 +16,7 @@ const getYearsByModel = async (req, res) => {
 const createModel = async (req, res) => {
   try {
     const { brand_id, name } = req.body;
-    const [result] = await db.query(
-      'INSERT INTO car_models (brand_id, name) VALUES (?, ?)',
-      [brand_id, name]
-    );
+    const result = await modelModel.createModel({ brand_id, name });
     res.status(201).json({
       success: true,
       message: 'Model created',
@@ -37,10 +32,7 @@ const createModel = async (req, res) => {
 const updateModel = async (req, res) => {
   try {
     const { brand_id, name } = req.body;
-    const [result] = await db.query(
-      'UPDATE car_models SET brand_id = ?, name = ? WHERE id = ?',
-      [brand_id, name, req.params.id]
-    );
+    const result = await modelModel.updateModelById(req.params.id, { brand_id, name });
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, message: 'Model not found' });
     }
@@ -54,7 +46,7 @@ const updateModel = async (req, res) => {
 // DELETE /api/v1/admin/models/:id
 const deleteModel = async (req, res) => {
   try {
-    const [result] = await db.query('DELETE FROM car_models WHERE id = ?', [req.params.id]);
+    const result = await modelModel.deleteModelById(req.params.id);
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, message: 'Model not found' });
     }
@@ -69,10 +61,7 @@ const deleteModel = async (req, res) => {
 const createModelYear = async (req, res) => {
   try {
     const { model_id, year } = req.body;
-    const [result] = await db.query(
-      'INSERT INTO model_years (model_id, year) VALUES (?, ?)',
-      [model_id, year]
-    );
+    const result = await modelYearModel.createModelYear({ model_id, year });
     res.status(201).json({
       success: true,
       message: 'Model year created',
@@ -90,7 +79,7 @@ const createModelYear = async (req, res) => {
 // DELETE /api/v1/admin/model-years/:id
 const deleteModelYear = async (req, res) => {
   try {
-    const [result] = await db.query('DELETE FROM model_years WHERE id = ?', [req.params.id]);
+    const result = await modelYearModel.deleteModelYearById(req.params.id);
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, message: 'Model year not found' });
     }
