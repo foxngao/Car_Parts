@@ -6,6 +6,7 @@ const searchParts = async (req, res) => {
     const { 
       keyword, model_year_id, category_id, 
       min_price, max_price, brand_id, year,
+      is_combo,
       sort_by = 'name', sort_order = 'asc',
       page = 1, limit = 10 
     } = req.query;
@@ -52,6 +53,11 @@ const searchParts = async (req, res) => {
       where.push('my.year = ?');
       params.push(parseInt(year));
       needCompatibilityJoin = true;
+    }
+
+    if (is_combo !== undefined) {
+      where.push('p.is_combo = ?');
+      params.push(is_combo === 'true' || is_combo === '1');
     }
 
     const whereClause = where.length > 0 ? 'WHERE ' + where.join(' AND ') : '';
@@ -208,40 +214,83 @@ const getPartById = async (req, res) => {
 
 // POST /api/v1/admin/parts
 const createPart = async (req, res) => {
+  const connection = await db.getConnection();
   try {
-    const { category_id, name, description, price, stock_quantity, image_url } = req.body;
+    const { category_id, name, description, price, stock_quantity, image_url, is_combo = false, combo_items = [] } = req.body;
 
-    const [result] = await db.query(
-      'INSERT INTO parts (category_id, name, description, price, stock_quantity, image_url) VALUES (?, ?, ?, ?, ?, ?)',
-      [category_id, name, description, price, stock_quantity, image_url]
+    await connection.beginTransaction();
+
+    const [result] = await connection.query(
+      'INSERT INTO parts (category_id, name, description, price, stock_quantity, image_url, is_combo) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [category_id, name, description, price, stock_quantity, image_url, is_combo]
     );
+
+    const partId = result.insertId;
+
+    if (is_combo && combo_items.length > 0) {
+      const values = combo_items.map(item => [partId, item.part_id, item.quantity]);
+      await connection.query(
+        'INSERT INTO combo_items (combo_id, part_id, quantity) VALUES ?',
+        [values]
+      );
+    }
+
+    await connection.commit();
     res.status(201).json({
       success: true,
       message: 'Part created',
-      data: { id: result.insertId, name, price, stock_quantity }
+      data: { id: partId, name, price, stock_quantity, is_combo }
     });
   } catch (error) {
+    await connection.rollback();
     console.error('Create part error:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });
+  } finally {
+    connection.release();
   }
 };
 
 // PUT /api/v1/admin/parts/:id
 const updatePart = async (req, res) => {
+  const connection = await db.getConnection();
   try {
-    const { category_id, name, description, price, stock_quantity, image_url } = req.body;
+    const { category_id, name, description, price, stock_quantity, image_url, is_combo = false, combo_items = [] } = req.body;
+    const partId = req.params.id;
 
-    const [result] = await db.query(
-      'UPDATE parts SET category_id = ?, name = ?, description = ?, price = ?, stock_quantity = ?, image_url = ? WHERE id = ?',
-      [category_id, name, description, price, stock_quantity, image_url, req.params.id]
+    await connection.beginTransaction();
+
+    const [result] = await connection.query(
+      'UPDATE parts SET category_id = ?, name = ?, description = ?, price = ?, stock_quantity = ?, image_url = ?, is_combo = ? WHERE id = ?',
+      [category_id, name, description, price, stock_quantity, image_url, is_combo, partId]
     );
+
     if (result.affectedRows === 0) {
+      await connection.rollback();
       return res.status(404).json({ success: false, message: 'Part not found' });
     }
+
+    if (is_combo) {
+      // Clear old combo items
+      await connection.query('DELETE FROM combo_items WHERE combo_id = ?', [partId]);
+      if (combo_items.length > 0) {
+        const values = combo_items.map(item => [partId, item.part_id, item.quantity]);
+        await connection.query(
+          'INSERT INTO combo_items (combo_id, part_id, quantity) VALUES ?',
+          [values]
+        );
+      }
+    } else {
+      await connection.query('DELETE FROM combo_items WHERE combo_id = ?', [partId]);
+    }
+
+    await connection.commit();
     res.json({ success: true, message: 'Part updated' });
   } catch (error) {
+    await connection.rollback();
     console.error('Update part error:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });
+  } finally {
+    connection.release();
   }
 };
 

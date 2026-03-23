@@ -11,6 +11,7 @@ import Footer from './components/Common/Footer';
 import Home from './pages/Home';
 import SearchResults from './pages/SearchResults';
 import ProductDetail from './pages/ProductDetail';
+import CombosPage from './pages/CombosPage';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import Compare from './pages/Compare';
@@ -24,12 +25,15 @@ import Orders from './pages/Orders';
 import OrderDetail from './pages/OrderDetail';
 import Profile from './pages/Profile';
 import SearchHistory from './pages/SearchHistory';
+import FavoritesPage from './pages/FavoritesPage';
+import Notifications from './pages/Notifications';
 
 // Admin pages
 import AdminLayout from './pages/Admin/AdminLayout';
 import Dashboard from './pages/Admin/Dashboard';
 import Users from './pages/Admin/Users';
 import Products from './pages/Admin/Products';
+import Combos from './pages/Admin/Combos';
 import Brands from './pages/Admin/Brands';
 import Models from './pages/Admin/Models';
 import Categories from './pages/Admin/Categories';
@@ -69,6 +73,7 @@ function AppContent() {
           {/* Public routes */}
           <Route path="/" element={<Home />} />
           <Route path="/search" element={<SearchResults />} />
+          <Route path="/combos" element={<CombosPage />} />
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
@@ -125,6 +130,22 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/wishlist"
+            element={
+              <ProtectedRoute>
+                <FavoritesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute>
+                <Notifications />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Admin routes */}
           <Route
@@ -139,6 +160,7 @@ function AppContent() {
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="users" element={<Users />} />
             <Route path="products" element={<Products />} />
+            <Route path="combos" element={<Combos />} />
             <Route path="brands" element={<Brands />} />
             <Route path="models" element={<Models />} />
             <Route path="categories" element={<Categories />} />

@@ -11,7 +11,8 @@ import {
   BarChart3,
   LogOut,
   Menu,
-  X
+  X,
+  PackageOpen
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -25,6 +26,7 @@ const AdminLayout = () => {
     { path: '/admin/dashboard', icon: LayoutDashboard, label: 'Tổng quan', color: 'blue' },
     { path: '/admin/users', icon: Users, label: 'Quản lý người dùng', color: 'purple' },
     { path: '/admin/products', icon: Package, label: 'Quản lý sản phẩm', color: 'green' },
+    { path: '/admin/combos', icon: PackageOpen, label: 'Quản lý Combo', color: 'blue' },
     { path: '/admin/brands', icon: Car, label: 'Quản lý hãng xe', color: 'orange' },
     { path: '/admin/categories', icon: Grid, label: 'Quản lý danh mục', color: 'pink' },
     { path: '/admin/orders', icon: ShoppingBag, label: 'Quản lý đơn hàng', color: 'red' },

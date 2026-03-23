@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingCart, ChevronRight, GitCompareArrows } from 'lucide-react';
+import { ShoppingCart, ChevronRight, GitCompareArrows, Heart } from 'lucide-react';
 import { formatCurrency } from '../../utils/formatters';
 import cartApi from '../../api/cartApi';
+import { favoriteApi } from '../../api/favoriteApi';
+import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
 
 const ProductCard = ({ part, onAddToCart }) => {
+  const { isAuthenticated } = useAuth();
   const [isCompared, setIsCompared] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem('compareIds');
@@ -16,7 +20,13 @@ const ProductCard = ({ part, onAddToCart }) => {
         setIsCompared(ids.includes(part.id));
       } catch (e) {}
     }
-  }, [part.id]);
+
+    if (isAuthenticated) {
+      favoriteApi.checkFavorite(part.id)
+        .then(res => setIsFavorite(res.data.isFavorite))
+        .catch(() => {});
+    }
+  }, [part.id, isAuthenticated]);
 
   const handleAddToCart = async (e) => {
     e.preventDefault();
@@ -68,6 +78,22 @@ const ProductCard = ({ part, onAddToCart }) => {
     window.dispatchEvent(new Event('compareUpdate'));
   };
 
+  const handleFavorite = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để yêu thích sản phẩm');
+      return;
+    }
+    try {
+      const res = await favoriteApi.toggleFavorite(part.id);
+      setIsFavorite(res.data.isFavorite);
+      toast.success(res.data.message);
+    } catch (error) {
+      toast.error('Có lỗi xảy ra');
+    }
+  };
+
   return (
     <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden hover:shadow-2xl transition-all duration-500 group">
       <Link to={`/product/${part.id}`}>
@@ -93,6 +119,18 @@ const ProductCard = ({ part, onAddToCart }) => {
             title={isCompared ? 'Bỏ so sánh' : 'Thêm so sánh'}
           >
             <GitCompareArrows size={16} />
+          </button>
+          {/* Favorite toggle */}
+          <button
+            onClick={handleFavorite}
+            className={`absolute top-14 right-4 p-2 rounded-xl shadow-sm transition-all ${
+              isFavorite 
+                ? 'bg-red-50 text-red-500' 
+                : 'bg-white/90 backdrop-blur-sm text-slate-500 hover:text-red-500'
+            }`}
+            title={isFavorite ? 'Bỏ yêu thích' : 'Yêu thích'}
+          >
+            <Heart size={16} fill={isFavorite ? 'currentColor' : 'none'} />
           </button>
           {part.stock_quantity <= 0 && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">

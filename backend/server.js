@@ -32,6 +32,8 @@ app.use('/api/v1/vin', require('./src/routes/vin.routes'));
 app.use('/api/v1/search', require('./src/routes/imageSearch.routes'));
 app.use('/api/v1/search-history', require('./src/routes/searchHistory.routes'));
 app.use('/api/v1/compare', require('./src/routes/compare.routes'));
+app.use('/api/v1/favorites', require('./src/routes/favorite.routes'));
+app.use('/api/v1/combos', require('./src/routes/combo.routes'));
 app.use('/api/v1', require('./src/routes/review.routes'));
 
 // Health check
