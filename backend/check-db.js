@@ -1,4 +1,4 @@
-const db = require('./src/config/db');
+const db = require('./config/db');
 
 async function check() {
   const [rows] = await db.query('SELECT spec_name FROM part_specifications WHERE spec_name LIKE "%nh%" LIMIT 1');
