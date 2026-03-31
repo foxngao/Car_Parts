@@ -1,4 +1,4 @@
-const db = require('../src/config/db');
+const db = require('../config/db');
 
 const findPartsByModelYearId = async (modelYearId) => {
   const [parts] = await db.query(

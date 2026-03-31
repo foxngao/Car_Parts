@@ -12,7 +12,7 @@ test('admin model findAllUsers queries users ordered by created date with groupe
     }
   };
 
-  const adminModel = loadWithMocks('../../src/models/admin.model.js', {
+  const adminModel = loadWithMocks('../../models/admin.model.js', {
     '../config/db': db
   });
 
@@ -32,7 +32,7 @@ test('admin model updateUserStatusById updates user active flag by id', async ()
     }
   };
 
-  const adminModel = loadWithMocks('../../src/models/admin.model.js', {
+  const adminModel = loadWithMocks('../../models/admin.model.js', {
     '../config/db': db
   });
 

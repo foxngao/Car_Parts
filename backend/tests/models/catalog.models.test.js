@@ -12,7 +12,7 @@ test('brand model findAll queries brands ordered by name', async () => {
     }
   };
 
-  const brandModel = loadWithMocks('../../src/models/brand.model.js', {
+  const brandModel = loadWithMocks('../../models/brand.model.js', {
     '../config/db': db
   });
 
@@ -31,7 +31,7 @@ test('model model findByBrandId queries car_models by brand id', async () => {
     }
   };
 
-  const modelModel = loadWithMocks('../../src/models/model.model.js', {
+  const modelModel = loadWithMocks('../../models/model.model.js', {
     '../config/db': db
   });
 
@@ -53,7 +53,7 @@ test('model model findByModelId queries years descending', async () => {
     }
   };
 
-  const modelModel = loadWithMocks('../../src/models/model.model.js', {
+  const modelModel = loadWithMocks('../../models/model.model.js', {
     '../config/db': db
   });
 

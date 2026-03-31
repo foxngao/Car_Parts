@@ -12,7 +12,7 @@ test('notification model findNotificationsByUserId queries latest notifications'
     }
   };
 
-  const notificationModel = loadWithMocks('../../src/models/notification.model.js', {
+  const notificationModel = loadWithMocks('../../models/notification.model.js', {
     '../config/db': db
   });
 
@@ -32,7 +32,7 @@ test('notification model markAsReadById updates notification ownership row', asy
     }
   };
 
-  const notificationModel = loadWithMocks('../../src/models/notification.model.js', {
+  const notificationModel = loadWithMocks('../../models/notification.model.js', {
     '../config/db': db
   });
 

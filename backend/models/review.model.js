@@ -1,4 +1,4 @@
-const db = require('../src/config/db');
+const db = require('../config/db');
 
 const findReviewSummaryByPartId = async (partId) => {
   const [rows] = await db.query(

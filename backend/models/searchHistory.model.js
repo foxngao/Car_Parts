@@ -1,4 +1,4 @@
-const db = require('../src/config/db');
+const db = require('../config/db');
 
 const findRecentSearchByUser = async (userId, query, searchType) => {
   const [recent] = await db.query(

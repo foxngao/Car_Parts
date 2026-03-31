@@ -12,7 +12,7 @@ test('review model findReviewSummaryByPartId queries summary aggregates', async 
     }
   };
 
-  const reviewModel = loadWithMocks('../../src/models/review.model.js', {
+  const reviewModel = loadWithMocks('../../models/review.model.js', {
     '../config/db': db
   });
 
@@ -32,7 +32,7 @@ test('review model findReviewById queries part_reviews by id', async () => {
     }
   };
 
-  const reviewModel = loadWithMocks('../../src/models/review.model.js', {
+  const reviewModel = loadWithMocks('../../models/review.model.js', {
     '../config/db': db
   });
 

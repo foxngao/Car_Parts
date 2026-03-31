@@ -12,7 +12,7 @@ test('category model updateCategoryById updates category name by id', async () =
     }
   };
 
-  const categoryModel = loadWithMocks('../../src/models/category.model.js', {
+  const categoryModel = loadWithMocks('../../models/category.model.js', {
     '../config/db': db
   });
 

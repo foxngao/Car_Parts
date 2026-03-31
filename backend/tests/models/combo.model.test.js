@@ -12,7 +12,7 @@ test('combo model findComboById queries combo part details by id', async () => {
     }
   };
 
-  const comboModel = loadWithMocks('../../src/models/combo.model.js', {
+  const comboModel = loadWithMocks('../../models/combo.model.js', {
     '../config/db': db
   });
 

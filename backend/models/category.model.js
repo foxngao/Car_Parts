@@ -1,4 +1,4 @@
-const db = require('../src/config/db');
+const db = require('../config/db');
 
 const findAllCategories = async () => {
   const [categories] = await db.query('SELECT * FROM categories ORDER BY name');

@@ -1,4 +1,4 @@
-const vinModel = require('../src/models/vin.model');
+const vinModel = require('../models/vin.model');
 
 // ==================== VIN DECODE HELPERS ====================
 

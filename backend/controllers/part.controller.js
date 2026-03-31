@@ -1,4 +1,4 @@
-const partModel = require('../src/models/part.model');
+const partModel = require('../models/part.model');
 
 // GET /api/v1/parts/search?keyword=...&model_year_id=...&category_id=...&min_price=...&max_price=...&brand_id=...&year=...&sort_by=...&sort_order=...&page=1&limit=10
 const searchParts = async (req, res) => {

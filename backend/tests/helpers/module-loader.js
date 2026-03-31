@@ -74,7 +74,6 @@ const loadWithMocks = (targetModulePath, mocks) => {
   }
 
   const loadedModule = require(modulePath);
-
   const loadedDuringRequire = Object.keys(require.cache).filter((cachedPath) => !cacheBeforeLoad.has(cachedPath));
 
   delete require.cache[modulePath];

@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const { body } = require('express-validator');
-const validate = require('../src/middlewares/validate');
-const { verifyToken } = require('../src/middlewares/auth');
+const validate = require('../middlewares/validate');
+const { verifyToken } = require('../middlewares/auth');
 const { getCartItems, addToCart, updateCartItem, removeCartItem } = require('../controllers/cart.controller');
 
 // All cart routes require authentication

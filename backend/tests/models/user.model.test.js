@@ -12,7 +12,7 @@ test('user model findProfileById queries user profile with grouped roles', async
     }
   };
 
-  const userModel = loadWithMocks('../../src/models/user.model.js', {
+  const userModel = loadWithMocks('../../models/user.model.js', {
     '../config/db': db
   });
 
@@ -32,7 +32,7 @@ test('user model updatePasswordByUserId updates stored password hash', async () 
     }
   };
 
-  const userModel = loadWithMocks('../../src/models/user.model.js', {
+  const userModel = loadWithMocks('../../models/user.model.js', {
     '../config/db': db
   });
 

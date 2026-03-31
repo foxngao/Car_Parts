@@ -12,7 +12,7 @@ test('part model deletePartById deletes part by id', async () => {
     }
   };
 
-  const partModel = loadWithMocks('../../src/models/part.model.js', {
+  const partModel = loadWithMocks('../../models/part.model.js', {
     '../config/db': db
   });
 

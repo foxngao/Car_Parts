@@ -12,7 +12,7 @@ test('order model findOrdersByUserId queries user orders descending', async () =
     }
   };
 
-  const orderModel = loadWithMocks('../../src/models/order.model.js', {
+  const orderModel = loadWithMocks('../../models/order.model.js', {
     '../config/db': db
   });
 
@@ -32,7 +32,7 @@ test('order model findOrderById queries transaction connection by id', async () 
     }
   };
 
-  const orderModel = loadWithMocks('../../src/models/order.model.js', {
+  const orderModel = loadWithMocks('../../models/order.model.js', {
     '../config/db': { query: async () => { throw new Error('not used'); } }
   });
 

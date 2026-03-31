@@ -12,7 +12,7 @@ test('cart model findCartItemsByUserId queries cart rows with part info', async 
     }
   };
 
-  const cartModel = loadWithMocks('../../src/models/cart.model.js', {
+  const cartModel = loadWithMocks('../../models/cart.model.js', {
     '../config/db': db
   });
 
@@ -32,7 +32,7 @@ test('cart model deleteCartItemById deletes by item and user ids', async () => {
     }
   };
 
-  const cartModel = loadWithMocks('../../src/models/cart.model.js', {
+  const cartModel = loadWithMocks('../../models/cart.model.js', {
     '../config/db': db
   });
 

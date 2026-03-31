@@ -12,7 +12,7 @@ test('vin model findWmiMapping queries WMI mapping with joined brand data', asyn
     }
   };
 
-  const vinModel = loadWithMocks('../../src/models/vin.model.js', {
+  const vinModel = loadWithMocks('../../models/vin.model.js', {
     '../config/db': db
   });
 

@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
-const authModel = require('../src/models/auth.model');
+const authModel = require('../models/auth.model');
 
 // Email transporter
 const transporter = nodemailer.createTransport({

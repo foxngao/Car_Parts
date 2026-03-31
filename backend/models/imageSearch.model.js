@@ -1,4 +1,4 @@
-const db = require('../src/config/db');
+const db = require('../config/db');
 const path = require('path');
 
 const buildImageSearchQueryData = ({ description = '', category_id, file, protocol, host, page, limit }) => {

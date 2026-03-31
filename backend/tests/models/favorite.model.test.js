@@ -12,7 +12,7 @@ test('favorite model findFavoriteByUserAndPart queries favorite_parts by user an
     }
   };
 
-  const favoriteModel = loadWithMocks('../../src/models/favorite.model.js', {
+  const favoriteModel = loadWithMocks('../../models/favorite.model.js', {
     '../config/db': db
   });
 
@@ -34,7 +34,7 @@ test('favorite model insertFavorite creates favorite_parts row', async () => {
     }
   };
 
-  const favoriteModel = loadWithMocks('../../src/models/favorite.model.js', {
+  const favoriteModel = loadWithMocks('../../models/favorite.model.js', {
     '../config/db': db
   });
 

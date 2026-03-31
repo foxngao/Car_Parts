@@ -1,4 +1,4 @@
-const modelModel = require('../src/models/model.model');
+const modelModel = require('../models/model.model');
 
 // GET /api/v1/models/:id/years
 const getYearsByModel = async (req, res) => {

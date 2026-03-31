@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { body } = require('express-validator');
-const validate = require('../src/middlewares/validate');
+const validate = require('../middlewares/validate');
 const { register, verifyOtp, login } = require('../controllers/auth.controller');
 
 // POST /api/v1/auth/register

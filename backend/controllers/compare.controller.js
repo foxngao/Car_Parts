@@ -1,4 +1,4 @@
-const compareModel = require('../src/models/compare.model');
+const compareModel = require('../models/compare.model');
 
 // GET /api/v1/compare?ids=1,2,3
 const getCompareData = async (req, res) => {

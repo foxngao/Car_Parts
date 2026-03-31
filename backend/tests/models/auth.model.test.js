@@ -12,7 +12,7 @@ test('auth model findUserIdByUsernameOrEmail queries users by username or email'
     }
   };
 
-  const authModel = loadWithMocks('../../src/models/auth.model.js', {
+  const authModel = loadWithMocks('../../models/auth.model.js', {
     '../config/db': db
   });
 
@@ -34,7 +34,7 @@ test('auth model findLoginUserByUsername queries grouped roles for login', async
     }
   };
 
-  const authModel = loadWithMocks('../../src/models/auth.model.js', {
+  const authModel = loadWithMocks('../../models/auth.model.js', {
     '../config/db': db
   });
 

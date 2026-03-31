@@ -26,7 +26,12 @@ COPY package.json ./
 COPY app.js ./
 COPY bin ./bin
 COPY server.js ./
-COPY src ./src
+COPY config ./config
+COPY controllers ./controllers
+COPY middlewares ./middlewares
+COPY models ./models
+COPY routes ./routes
+COPY utils ./utils
 COPY uploads ./uploads
 
 # Create uploads directory with correct permissions

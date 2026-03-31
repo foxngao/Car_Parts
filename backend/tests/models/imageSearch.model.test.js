@@ -12,7 +12,7 @@ test('imageSearch model findPartsByImageSearch queries ranked part results with 
     }
   };
 
-  const imageSearchModel = loadWithMocks('../../src/models/imageSearch.model.js', {
+  const imageSearchModel = loadWithMocks('../../models/imageSearch.model.js', {
     '../config/db': db
   });
 

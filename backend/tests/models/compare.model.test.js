@@ -12,7 +12,7 @@ test('compare model findPartsByIds queries parts with category names for placeho
     }
   };
 
-  const compareModel = loadWithMocks('../../src/models/compare.model.js', {
+  const compareModel = loadWithMocks('../../models/compare.model.js', {
     '../config/db': db
   });
 

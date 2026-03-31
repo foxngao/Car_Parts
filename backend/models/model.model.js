@@ -1,4 +1,4 @@
-const db = require('../src/config/db');
+const db = require('../config/db');
 
 const findByBrandId = async (brandId) => {
   const [models] = await db.query(

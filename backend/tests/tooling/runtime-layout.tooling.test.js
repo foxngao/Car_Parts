@@ -20,8 +20,13 @@ test('dockerfile copies monolithic runtime layout and starts bin/www', () => {
 
   assert.match(dockerfile, /^COPY app\.js \.\/$/m);
   assert.match(dockerfile, /^COPY bin \.\/bin$/m);
+  assert.match(dockerfile, /^COPY config \.\/config$/m);
+  assert.match(dockerfile, /^COPY controllers \.\/controllers$/m);
+  assert.match(dockerfile, /^COPY middlewares \.\/middlewares$/m);
+  assert.match(dockerfile, /^COPY models \.\/models$/m);
+  assert.match(dockerfile, /^COPY routes \.\/routes$/m);
+  assert.match(dockerfile, /^COPY utils \.\/utils$/m);
   assert.match(dockerfile, /^COPY server\.js \.\/$/m);
-  assert.match(dockerfile, /^COPY src \.\/src$/m);
   assert.match(dockerfile, /^COPY uploads \.\/uploads$/m);
   assert.match(dockerfile, /^CMD \["node", "bin\/www"\]$/m);
 });

@@ -2,7 +2,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const imageSearchModel = require('../src/models/imageSearch.model');
+const imageSearchModel = require('../models/imageSearch.model');
 
 // ==================== MULTER CONFIG ====================
 

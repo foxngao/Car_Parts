@@ -12,7 +12,7 @@ test('year model compatibility query joins parts and categories ordered by part 
     }
   };
 
-  const yearModel = loadWithMocks('../../src/models/year.model.js', {
+  const yearModel = loadWithMocks('../../models/year.model.js', {
     '../config/db': db
   });
 

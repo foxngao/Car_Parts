@@ -12,7 +12,7 @@ test('searchHistory model findSearchHistoryByUser queries user history filtered 
     }
   };
 
-  const searchHistoryModel = loadWithMocks('../../src/models/searchHistory.model.js', {
+  const searchHistoryModel = loadWithMocks('../../models/searchHistory.model.js', {
     '../config/db': db
   });
 
