@@ -23,11 +23,14 @@ COPY --from=deps /app/node_modules ./node_modules
 
 # Copy application source code
 COPY package.json ./
+COPY app.js ./
+COPY bin ./bin
 COPY server.js ./
 COPY src ./src
+COPY uploads ./uploads
 
 # Create uploads directory with correct permissions
-RUN mkdir -p /app/uploads && chown -R appuser:appgroup /app/uploads
+RUN mkdir -p /app/uploads && chown -R appuser:appgroup /app/uploads /app/bin
 
 
 # Switch to non-root user
@@ -35,4 +38,4 @@ USER appuser
 
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+CMD ["node", "bin/www"]

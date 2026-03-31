@@ -48,7 +48,7 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
-    command: npx nodemon server.js
+    command: npx nodemon bin/www
     ports:
       - "3000:3000"
     environment:
