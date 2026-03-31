@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const favoriteController = require('../controllers/favorite.controller');
-const { verifyToken } = require('../middlewares/auth');
+const { verifyToken } = require('../src/middlewares/auth');
 
 // Các API này cần đăng nhập
 router.use(verifyToken);

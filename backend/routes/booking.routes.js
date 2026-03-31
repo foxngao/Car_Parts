@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const bookingModel = require('../models/booking.model');
-const { verifyToken } = require('../middlewares/auth');
+const bookingModel = require('../src/models/booking.model');
+const { verifyToken } = require('../src/middlewares/auth');
 
 router.get('/garages', async (req, res) => {
   try {

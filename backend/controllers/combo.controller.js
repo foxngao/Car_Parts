@@ -1,4 +1,4 @@
-const comboModel = require('../models/combo.model');
+const comboModel = require('../src/models/combo.model');
 
 // Lấy danh sách tất cả combos
 exports.getCombos = async (req, res) => {

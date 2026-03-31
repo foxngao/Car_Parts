@@ -1,4 +1,4 @@
-const searchHistoryModel = require('../models/searchHistory.model');
+const searchHistoryModel = require('../src/models/searchHistory.model');
 
 // POST /api/v1/search-history - Lưu lịch sử tìm kiếm
 const saveSearch = async (req, res) => {

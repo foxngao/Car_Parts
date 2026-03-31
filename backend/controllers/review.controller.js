@@ -1,4 +1,4 @@
-const reviewModel = require('../models/review.model');
+const reviewModel = require('../src/models/review.model');
 
 // GET /api/v1/parts/:id/reviews
 const getReviews = async (req, res) => {

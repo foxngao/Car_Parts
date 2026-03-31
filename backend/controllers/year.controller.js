@@ -1,4 +1,4 @@
-const yearModel = require('../models/year.model');
+const yearModel = require('../src/models/year.model');
 
 // GET /api/v1/years/:id/compatibility
 const getCompatibleParts = async (req, res) => {

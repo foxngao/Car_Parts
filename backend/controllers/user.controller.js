@@ -1,5 +1,5 @@
 const bcrypt = require('bcryptjs');
-const userModel = require('../models/user.model');
+const userModel = require('../src/models/user.model');
 
 // GET /api/v1/user/profile - Lấy thông tin profile kèm role
 const getProfile = async (req, res) => {

@@ -1,4 +1,4 @@
-const favoriteModel = require('../models/favorite.model');
+const favoriteModel = require('../src/models/favorite.model');
 
 // Lấy danh sách sản phẩm yêu thích của user
 exports.getFavorites = async (req, res) => {

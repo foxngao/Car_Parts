@@ -1,5 +1,5 @@
 const bcrypt = require('bcryptjs');
-const adminModel = require('../models/admin.model');
+const adminModel = require('../src/models/admin.model');
 
 // ==================== DASHBOARD STATISTICS ====================
 

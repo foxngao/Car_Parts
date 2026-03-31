@@ -1,4 +1,4 @@
-const cartModel = require('../models/cart.model');
+const cartModel = require('../src/models/cart.model');
 
 // GET /api/v1/cart/items
 const getCartItems = async (req, res) => {

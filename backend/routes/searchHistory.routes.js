@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { verifyToken } = require('../middlewares/auth');
+const { verifyToken } = require('../src/middlewares/auth');
 const { saveSearch, getSearchHistory, deleteSearchItem, deleteAllSearchHistory } = require('../controllers/searchHistory.controller');
 
 // All routes require authentication

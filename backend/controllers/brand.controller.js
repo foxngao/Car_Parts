@@ -1,5 +1,5 @@
-const brandModel = require('../models/brand.model');
-const modelModel = require('../models/model.model');
+const brandModel = require('../src/models/brand.model');
+const modelModel = require('../src/models/model.model');
 
 // GET /api/v1/brands
 const getAllBrands = async (req, res) => {

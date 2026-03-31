@@ -1,4 +1,4 @@
-const notificationModel = require('../models/notification.model');
+const notificationModel = require('../src/models/notification.model');
 
 const parseNotificationData = (notif) => {
   let parsedData = {};

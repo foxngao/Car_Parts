@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const { body } = require('express-validator');
-const validate = require('../middlewares/validate');
-const { verifyToken, isAdmin } = require('../middlewares/auth');
-const bookingModel = require('../models/booking.model');
+const validate = require('../src/middlewares/validate');
+const { verifyToken, isAdmin } = require('../src/middlewares/auth');
+const bookingModel = require('../src/models/booking.model');
 
 // Controllers
 const { createBrand, updateBrand, deleteBrand } = require('../controllers/brand.controller');

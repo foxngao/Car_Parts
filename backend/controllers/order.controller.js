@@ -1,5 +1,5 @@
-const orderModel = require('../models/order.model');
-const notificationModel = require('../models/notification.model');
+const orderModel = require('../src/models/order.model');
+const notificationModel = require('../src/models/notification.model');
 
 // ==================== HELPER FUNCTIONS ====================
 
