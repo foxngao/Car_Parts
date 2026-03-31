@@ -56,6 +56,7 @@ const resolvePathWithFallback = (moduleSpecifier, baseDirectory = __dirname) => 
 
 const loadWithMocks = (targetModulePath, mocks) => {
   const modulePath = resolvePathWithFallback(targetModulePath, __dirname);
+  const cacheBeforeLoad = new Set(Object.keys(require.cache));
 
   delete require.cache[modulePath];
 
@@ -74,9 +75,14 @@ const loadWithMocks = (targetModulePath, mocks) => {
 
   const loadedModule = require(modulePath);
 
+  const loadedDuringRequire = Object.keys(require.cache).filter((cachedPath) => !cacheBeforeLoad.has(cachedPath));
+
   delete require.cache[modulePath];
   for (const mockedPath of mockedPaths) {
     delete require.cache[mockedPath];
+  }
+  for (const loadedPath of loadedDuringRequire) {
+    delete require.cache[loadedPath];
   }
 
   return loadedModule;
