@@ -4,8 +4,8 @@
   "description": "Backend API for Auto Parts Search and Sales",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js",
+    "start": "node bin/www",
+    "dev": "nodemon bin/www",
     "test": "node --test"
   },
   "dependencies": {
