@@ -32,7 +32,7 @@ test('getNotifications parses JSON data from notification model results', async 
     ])
   };
 
-  const { getNotifications } = loadWithMocks('../../src/controllers/notification.controller.js', {
+  const { getNotifications } = loadWithMocks('../../controllers/notification.controller.js', {
     '../models/notification.model': notificationModel
   });
 
@@ -63,7 +63,7 @@ test('getUnreadCount returns count from notification model', async () => {
     countUnreadByUserId: async () => [{ count: 3 }]
   };
 
-  const { getUnreadCount } = loadWithMocks('../../src/controllers/notification.controller.js', {
+  const { getUnreadCount } = loadWithMocks('../../controllers/notification.controller.js', {
     '../models/notification.model': notificationModel
   });
 
@@ -86,7 +86,7 @@ test('markAsRead returns 404 when notification model updates no row', async () =
     }
   };
 
-  const { markAsRead } = loadWithMocks('../../src/controllers/notification.controller.js', {
+  const { markAsRead } = loadWithMocks('../../controllers/notification.controller.js', {
     '../models/notification.model': notificationModel
   });
 

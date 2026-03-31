@@ -21,7 +21,7 @@ test('createReview returns 404 when review model cannot find the part', async ()
     findPartById: async () => []
   };
 
-  const { createReview } = loadWithMocks('../../src/controllers/review.controller.js', {
+  const { createReview } = loadWithMocks('../../controllers/review.controller.js', {
     '../models/review.model': reviewModel
   });
 
@@ -41,7 +41,7 @@ test('updateReview returns 403 when review belongs to another user', async () =>
     findReviewById: async () => [{ id: 4, user_id: 99 }]
   };
 
-  const { updateReview } = loadWithMocks('../../src/controllers/review.controller.js', {
+  const { updateReview } = loadWithMocks('../../controllers/review.controller.js', {
     '../models/review.model': reviewModel
   });
 
@@ -61,7 +61,7 @@ test('deleteReview returns 403 when requester is neither owner nor admin', async
     findReviewById: async () => [{ id: 4, user_id: 99 }]
   };
 
-  const { deleteReview } = loadWithMocks('../../src/controllers/review.controller.js', {
+  const { deleteReview } = loadWithMocks('../../controllers/review.controller.js', {
     '../models/review.model': reviewModel
   });
 

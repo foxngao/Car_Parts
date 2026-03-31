@@ -25,7 +25,7 @@ test('register returns 409 when auth model reports duplicate username or email',
     }
   };
 
-  const { register } = loadWithMocks('../../src/controllers/auth.controller.js', {
+  const { register } = loadWithMocks('../../controllers/auth.controller.js', {
     '../models/auth.model': authModel
   });
 
@@ -50,7 +50,7 @@ test('verifyOtp returns 404 when auth model cannot find user by email', async ()
     }
   };
 
-  const { verifyOtp } = loadWithMocks('../../src/controllers/auth.controller.js', {
+  const { verifyOtp } = loadWithMocks('../../controllers/auth.controller.js', {
     '../models/auth.model': authModel
   });
 
@@ -75,7 +75,7 @@ test('login returns 401 when auth model finds no matching user', async () => {
     }
   };
 
-  const { login } = loadWithMocks('../../src/controllers/auth.controller.js', {
+  const { login } = loadWithMocks('../../controllers/auth.controller.js', {
     '../models/auth.model': authModel
   });
 

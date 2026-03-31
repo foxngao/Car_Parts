@@ -25,7 +25,7 @@ test('decodeVin returns 404 when vin model cannot find WMI mapping', async () =>
     }
   };
 
-  const { decodeVin } = loadWithMocks('../../src/controllers/vin.controller.js', {
+  const { decodeVin } = loadWithMocks('../../controllers/vin.controller.js', {
     '../models/vin.model': vinModel
   });
 

@@ -25,7 +25,7 @@ test('getCompatibleParts returns data from year model', async () => {
     }
   };
 
-  const { getCompatibleParts } = loadWithMocks('../../src/controllers/year.controller.js', {
+  const { getCompatibleParts } = loadWithMocks('../../controllers/year.controller.js', {
     '../models/year.model': yearModel
   });
 

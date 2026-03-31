@@ -25,7 +25,7 @@ test('getComboDetails returns 404 when combo model cannot find combo info', asyn
     }
   };
 
-  const controller = loadWithMocks('../../src/controllers/combo.controller.js', {
+  const controller = loadWithMocks('../../controllers/combo.controller.js', {
     '../models/combo.model': comboModel
   });
 

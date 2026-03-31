@@ -28,7 +28,7 @@ test('getYearsByModel returns data from model model', async () => {
     }
   };
 
-  const { getYearsByModel } = loadWithMocks('../../src/controllers/model.controller.js', {
+  const { getYearsByModel } = loadWithMocks('../../controllers/model.controller.js', {
     '../models/model.model': modelModel
   });
 
@@ -52,7 +52,7 @@ test('updateModel returns 404 when model layer reports no affected rows', async 
     updateModelById: async () => ({ affectedRows: 0 })
   };
 
-  const { updateModel } = loadWithMocks('../../src/controllers/model.controller.js', {
+  const { updateModel } = loadWithMocks('../../controllers/model.controller.js', {
     '../models/model.model': modelModel
   });
 
@@ -80,7 +80,7 @@ test('createModelYear maps duplicate errors to 409', async () => {
     }
   };
 
-  const { createModelYear } = loadWithMocks('../../src/controllers/model.controller.js', {
+  const { createModelYear } = loadWithMocks('../../controllers/model.controller.js', {
     '../models/model.model': modelModel
   });
 

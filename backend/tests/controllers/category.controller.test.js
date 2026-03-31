@@ -25,7 +25,7 @@ test('updateCategory returns 404 when category model updates no row', async () =
     }
   };
 
-  const { updateCategory } = loadWithMocks('../../src/controllers/category.controller.js', {
+  const { updateCategory } = loadWithMocks('../../controllers/category.controller.js', {
     '../models/category.model': categoryModel
   });
 

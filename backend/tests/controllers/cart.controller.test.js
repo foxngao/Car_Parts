@@ -25,7 +25,7 @@ test('getCartItems returns items loaded through cart model', async () => {
     }
   };
 
-  const { getCartItems } = loadWithMocks('../../src/controllers/cart.controller.js', {
+  const { getCartItems } = loadWithMocks('../../controllers/cart.controller.js', {
     '../models/cart.model': cartModel
   });
 
@@ -49,7 +49,7 @@ test('addToCart returns 404 when cart model cannot find the part', async () => {
     findPartStockById: async () => []
   };
 
-  const { addToCart } = loadWithMocks('../../src/controllers/cart.controller.js', {
+  const { addToCart } = loadWithMocks('../../controllers/cart.controller.js', {
     '../models/cart.model': cartModel
   });
 
@@ -73,7 +73,7 @@ test('removeCartItem returns 404 when cart model deletes no row', async () => {
     }
   };
 
-  const { removeCartItem } = loadWithMocks('../../src/controllers/cart.controller.js', {
+  const { removeCartItem } = loadWithMocks('../../controllers/cart.controller.js', {
     '../models/cart.model': cartModel
   });
 
