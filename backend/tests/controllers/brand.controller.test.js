@@ -25,7 +25,7 @@ test('getAllBrands returns data from brand model', async () => {
     findAll: async () => [{ id: 1, name: 'Toyota' }]
   };
 
-  const { getAllBrands } = loadWithMocks('../../src/controllers/brand.controller.js', {
+  const { getAllBrands } = loadWithMocks('../../controllers/brand.controller.js', {
     '../models/brand.model': brandModel,
     '../models/model.model': {}
   });
@@ -50,7 +50,7 @@ test('getModelsByBrand loads models through model model', async () => {
     }
   };
 
-  const { getModelsByBrand } = loadWithMocks('../../src/controllers/brand.controller.js', {
+  const { getModelsByBrand } = loadWithMocks('../../controllers/brand.controller.js', {
     '../models/brand.model': {},
     '../models/model.model': modelModel
   });
@@ -77,7 +77,7 @@ test('createBrand maps duplicate errors to 409', async () => {
     }
   };
 
-  const { createBrand } = loadWithMocks('../../src/controllers/brand.controller.js', {
+  const { createBrand } = loadWithMocks('../../controllers/brand.controller.js', {
     '../models/brand.model': brandModel,
     '../models/model.model': {}
   });

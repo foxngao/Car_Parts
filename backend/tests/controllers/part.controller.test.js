@@ -25,7 +25,7 @@ test('deletePart returns 404 when part model deletes no row', async () => {
     }
   };
 
-  const { deletePart } = loadWithMocks('../../src/controllers/part.controller.js', {
+  const { deletePart } = loadWithMocks('../../controllers/part.controller.js', {
     '../models/part.model': partModel
   });
 

@@ -25,7 +25,7 @@ test('getFavorites returns data from favorite model', async () => {
     }
   };
 
-  const { getFavorites } = loadWithMocks('../../src/controllers/favorite.controller.js', {
+  const { getFavorites } = loadWithMocks('../../controllers/favorite.controller.js', {
     '../models/favorite.model': favoriteModel
   });
 
@@ -50,7 +50,7 @@ test('toggleFavorite removes favorite when model reports an existing row', async
     }
   };
 
-  const { toggleFavorite } = loadWithMocks('../../src/controllers/favorite.controller.js', {
+  const { toggleFavorite } = loadWithMocks('../../controllers/favorite.controller.js', {
     '../models/favorite.model': favoriteModel
   });
 
@@ -71,7 +71,7 @@ test('checkFavorite returns false when favorite model finds no row', async () =>
     findFavoriteByUserAndPart: async () => []
   };
 
-  const { checkFavorite } = loadWithMocks('../../src/controllers/favorite.controller.js', {
+  const { checkFavorite } = loadWithMocks('../../controllers/favorite.controller.js', {
     '../models/favorite.model': favoriteModel
   });
 

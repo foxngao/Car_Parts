@@ -32,7 +32,7 @@ test('searchByImage returns empty results when imageSearch model receives no sea
     }
   };
 
-  const { searchByImage } = loadWithMocks('../../src/controllers/imageSearch.controller.js', {
+  const { searchByImage } = loadWithMocks('../../controllers/imageSearch.controller.js', {
     '../models/imageSearch.model': imageSearchModel
   });
 

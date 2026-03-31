@@ -25,7 +25,7 @@ test('getCompareData returns 404 when compare model finds no products', async ()
     }
   };
 
-  const { getCompareData } = loadWithMocks('../../src/controllers/compare.controller.js', {
+  const { getCompareData } = loadWithMocks('../../controllers/compare.controller.js', {
     '../models/compare.model': compareModel
   });
 

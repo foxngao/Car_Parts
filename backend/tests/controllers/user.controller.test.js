@@ -25,7 +25,7 @@ test('getProfile returns 404 when user model finds no user', async () => {
     }
   };
 
-  const { getProfile } = loadWithMocks('../../src/controllers/user.controller.js', {
+  const { getProfile } = loadWithMocks('../../controllers/user.controller.js', {
     '../models/user.model': userModel
   });
 
@@ -50,7 +50,7 @@ test('updateProfile forwards profile updates to user model', async () => {
     }
   };
 
-  const { updateProfile } = loadWithMocks('../../src/controllers/user.controller.js', {
+  const { updateProfile } = loadWithMocks('../../controllers/user.controller.js', {
     '../models/user.model': userModel
   });
 
@@ -74,7 +74,7 @@ test('changePassword returns 400 when current password is incorrect', async () =
     findPasswordByUserId: async () => [{ password: 'stored-hash' }]
   };
 
-  const { changePassword } = loadWithMocks('../../src/controllers/user.controller.js', {
+  const { changePassword } = loadWithMocks('../../controllers/user.controller.js', {
     '../models/user.model': userModel,
   });
 

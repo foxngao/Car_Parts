@@ -33,7 +33,7 @@ test('getAllUsers maps roles from admin model results', async () => {
     ])
   };
 
-  const { getAllUsers } = loadWithMocks('../../src/controllers/admin.controller.js', {
+  const { getAllUsers } = loadWithMocks('../../controllers/admin.controller.js', {
     '../models/admin.model': adminModel
   });
 
@@ -69,7 +69,7 @@ test('createUser returns 409 when admin model reports duplicate username or emai
     }
   };
 
-  const { createUser } = loadWithMocks('../../src/controllers/admin.controller.js', {
+  const { createUser } = loadWithMocks('../../controllers/admin.controller.js', {
     '../models/admin.model': adminModel
   });
 
@@ -96,7 +96,7 @@ test('toggleUserStatus returns 404 when admin model updates no rows', async () =
     }
   };
 
-  const { toggleUserStatus } = loadWithMocks('../../src/controllers/admin.controller.js', {
+  const { toggleUserStatus } = loadWithMocks('../../controllers/admin.controller.js', {
     '../models/admin.model': adminModel
   });
 

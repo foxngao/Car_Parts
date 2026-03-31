@@ -43,7 +43,7 @@ test('createOrder returns 400 when order model finds an empty cart', async () =>
     }
   };
 
-  const { createOrder } = loadWithMocks('../../src/controllers/order.controller.js', {
+  const { createOrder } = loadWithMocks('../../controllers/order.controller.js', {
     '../models/order.model': orderModel,
     '../models/notification.model': {}
   });
@@ -71,7 +71,7 @@ test('getOrderById returns 404 when order model cannot find the order', async ()
     }
   };
 
-  const { getOrderById } = loadWithMocks('../../src/controllers/order.controller.js', {
+  const { getOrderById } = loadWithMocks('../../controllers/order.controller.js', {
     '../models/order.model': orderModel,
     '../models/notification.model': {}
   });
@@ -99,7 +99,7 @@ test('updateOrderStatus returns 404 when order model cannot find the order', asy
     }
   };
 
-  const { updateOrderStatus } = loadWithMocks('../../src/controllers/order.controller.js', {
+  const { updateOrderStatus } = loadWithMocks('../../controllers/order.controller.js', {
     '../models/order.model': orderModel,
     '../models/notification.model': {}
   });

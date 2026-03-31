@@ -25,7 +25,7 @@ test('getSearchHistory parses JSON filters from search history model results', a
     }
   };
 
-  const { getSearchHistory } = loadWithMocks('../../src/controllers/searchHistory.controller.js', {
+  const { getSearchHistory } = loadWithMocks('../../controllers/searchHistory.controller.js', {
     '../models/searchHistory.model': searchHistoryModel
   });
 
