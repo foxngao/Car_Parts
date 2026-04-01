@@ -7,13 +7,20 @@ export const formatCurrency = (amount) => {
 };
 
 export const formatDate = (date) => {
+  if (!date) return 'Chưa cập nhật';
+
+  const parsedDate = new Date(date);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return 'Chưa cập nhật';
+  }
+
   return new Intl.DateTimeFormat('vi-VN', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  }).format(new Date(date));
+  }).format(parsedDate);
 };
 
 export const formatPhoneNumber = (phone) => {
