@@ -60,7 +60,7 @@ const Checkout = () => {
 
     setProcessing(true);
     try {
-      const res = await orderApi.createOrder();
+      const res = await orderApi.createOrder(formData);
       toast.success('Đặt hàng thành công!');
       navigate(`/orders/${res.data.data.order_id}`);
     } catch (error) {
