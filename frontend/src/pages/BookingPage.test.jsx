@@ -62,4 +62,23 @@ describe('BookingPage', () => {
     expect(bookingApi.getGarages).toHaveBeenCalled();
     expect(toast.error).not.toHaveBeenCalled();
   });
+
+  it('normalizes wrapped garage responses before rendering the booking UI', async () => {
+    bookingApi.getGarages.mockResolvedValue({
+      data: {
+        data: [
+          { id: 'garage-2', name: 'Garage B', address: '789 Street', phone: '0911000000' },
+        ],
+      },
+    });
+
+    renderBookingPage({
+      pathname: '/booking',
+      state: { orderId: 456 },
+    });
+
+    expect(await screen.findByText('Đặt lịch lắp đặt cho đơn hàng #456')).toBeInTheDocument();
+    expect(await screen.findByText('Garage B')).toBeInTheDocument();
+    expect(toast.error).not.toHaveBeenCalled();
+  });
 });

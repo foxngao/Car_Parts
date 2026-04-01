@@ -25,7 +25,8 @@ const BookingPage = () => {
   const fetchGarages = async () => {
     try {
       const res = await bookingApi.getGarages();
-      setGarages(res.data);
+      const garageList = Array.isArray(res.data) ? res.data : res.data?.data;
+      setGarages(Array.isArray(garageList) ? garageList : []);
     } catch (error) {
       toast.error('Không thể tải danh sách Gara');
     }
