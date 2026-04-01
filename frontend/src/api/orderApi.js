@@ -2,7 +2,7 @@ import axiosClient from './axiosClient';
 
 const orderApi = {
   // Tạo đơn hàng
-  createOrder: () => axiosClient.post('/orders'),
+  createOrder: (payload) => axiosClient.post('/orders', payload),
   
   // Lấy danh sách đơn hàng
   getOrders: () => axiosClient.get('/orders'),
