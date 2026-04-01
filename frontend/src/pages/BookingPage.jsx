@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import bookingApi from '../api/bookingApi';
 import toast from 'react-hot-toast';
 import { Calendar, MapPin, Clock, MessageSquare } from 'lucide-react';
@@ -17,12 +17,9 @@ const BookingPage = () => {
   });
 
   useEffect(() => {
-    if (!orderId) {
-      toast.error('Không tìm thấy thông tin đơn hàng');
-      navigate('/orders');
-      return;
+    if (orderId) {
+      fetchGarages();
     }
-    fetchGarages();
   }, [orderId]);
 
   const fetchGarages = async () => {
@@ -47,6 +44,10 @@ const BookingPage = () => {
       toast.error('Đặt lịch thất bại, vui lòng thử lại');
     }
   };
+
+  if (!orderId) {
+    return <Navigate to="/orders" replace />;
+  }
 
   return (
     <div className="max-w-4xl mx-auto p-6">
