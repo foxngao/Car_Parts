@@ -44,3 +44,30 @@ test('order model findOrderById queries transaction connection by id', async () 
   ]]);
   assert.deepEqual(result, [{ id: 11, status: 'PENDING' }]);
 });
+
+test('order model createOrderRecord writes shipping snapshot fields to orders table', async () => {
+  const calls = [];
+  const connection = {
+    query: async (...args) => {
+      calls.push(args);
+      return [{ insertId: 88 }];
+    }
+  };
+
+  const orderModel = loadWithMocks('../../models/order.model.js', {
+    '../config/db': { query: async () => { throw new Error('not used'); } }
+  });
+
+  const result = await orderModel.createOrderRecord(connection, 5, 320000, 'PENDING', {
+    full_name: 'Nguyen Van A',
+    phone: '0909123456',
+    address: '123 Duong ABC',
+    notes: 'Giao buoi sang'
+  });
+
+  assert.deepEqual(calls, [[
+    'INSERT INTO orders (user_id, total_amount, status, full_name, phone, address, notes) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    [5, 320000, 'PENDING', 'Nguyen Van A', '0909123456', '123 Duong ABC', 'Giao buoi sang']
+  ]]);
+  assert.deepEqual(result, { insertId: 88 });
+});

@@ -16,10 +16,11 @@ const findCartItemsForCheckout = async (connection, userId) => {
   return rows;
 };
 
-const createOrderRecord = async (connection, userId, totalAmount, status) => {
+const createOrderRecord = async (connection, userId, totalAmount, status, shippingInfo = {}) => {
+  const { full_name = null, phone = null, address = null, notes = null } = shippingInfo;
   const [result] = await connection.query(
-    'INSERT INTO orders (user_id, total_amount, status) VALUES (?, ?, ?)',
-    [userId, totalAmount, status]
+    'INSERT INTO orders (user_id, total_amount, status, full_name, phone, address, notes) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    [userId, totalAmount, status, full_name, phone, address, notes]
   );
 
   return result;
@@ -79,7 +80,7 @@ const clearCartByUserId = async (connection, userId) => {
 
 const findOrdersByUserId = async (userId) => {
   const [rows] = await db.query(
-    `SELECT id, total_amount, status, order_date
+    `SELECT id, total_amount, status, order_date, full_name, phone, address, notes
      FROM orders WHERE user_id = ?
      ORDER BY order_date DESC`,
     [userId]
@@ -103,7 +104,7 @@ const findOrderItemsByOrderId = async (orderId) => {
 // --- PHẦN SỬA ĐỔI CHÍNH Ở ĐÂY ---
 const findOrderByIdForUser = async (id, userId) => {
   const [rows] = await db.query(
-    `SELECT o.*, u.username, u.email, u.full_name, u.phone, u.address,
+    `SELECT o.*, u.username, u.email,
             sb.id as booking_id
      FROM orders o
      JOIN users u ON o.user_id = u.id
@@ -118,7 +119,7 @@ const findOrderByIdForUser = async (id, userId) => {
 
 const findAllOrders = async () => {
   const [rows] = await db.query(
-    `SELECT o.*, u.username, u.email, u.full_name, u.phone, u.address
+    `SELECT o.*, u.username, u.email
      FROM orders o
      JOIN users u ON o.user_id = u.id
      ORDER BY o.order_date DESC`

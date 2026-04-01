@@ -63,10 +63,9 @@ test('createOrder returns 400 when order model finds an empty cart', async () =>
   });
 });
 
-test('createOrder persists submitted shipping info before creating the order', async () => {
+test('createOrder stores submitted shipping info on order without updating user profile', async () => {
   const connection = createConnection();
   const recorded = {
-    profileUpdates: [],
     createOrderArgs: undefined,
     orderItems: [],
     decrements: [],
@@ -95,12 +94,6 @@ test('createOrder persists submitted shipping info before creating the order', a
     }
   };
 
-  const userModel = {
-    updateProfileById: async (...args) => {
-      recorded.profileUpdates.push(args);
-    }
-  };
-
   const notificationModel = {
     createNotification: async (...args) => {
       recorded.notifications.push(args);
@@ -109,7 +102,7 @@ test('createOrder persists submitted shipping info before creating the order', a
 
   const { createOrder } = loadWithMocks('../../controllers/order.controller.js', {
     '../models/order.model': orderModel,
-    '../models/user.model': userModel,
+    '../models/user.model': {},
     '../models/notification.model': notificationModel
   });
 
@@ -125,14 +118,18 @@ test('createOrder persists submitted shipping info before creating the order', a
     }
   }, response);
 
-  assert.deepEqual(recorded.profileUpdates, [
-    [5, {
+  assert.deepEqual(recorded.createOrderArgs, [
+    connection,
+    5,
+    300000,
+    'PENDING',
+    {
       full_name: 'Nguyen Van A',
       phone: '0909123456',
-      address: '123 Duong ABC'
-    }]
+      address: '123 Duong ABC',
+      notes: 'Giao buoi sang'
+    }
   ]);
-  assert.deepEqual(recorded.createOrderArgs, [connection, 5, 300000, 'PENDING']);
   assert.deepEqual(recorded.orderItems, [[connection, 42, 7, 2, 150000]]);
   assert.deepEqual(recorded.decrements, [[connection, 2, 7]]);
   assert.deepEqual(recorded.cartClearedFor, [connection, 5]);

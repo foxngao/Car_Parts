@@ -1,6 +1,5 @@
 const orderModel = require('../models/order.model');
 const notificationModel = require('../models/notification.model');
-const userModel = require('../models/user.model');
 
 // ==================== HELPER FUNCTIONS ====================
 
@@ -20,7 +19,7 @@ const createOrder = async (req, res) => {
   const connection = await orderModel.getConnection();
   try {
     await connection.beginTransaction();
-    const { full_name, phone, address } = req.body || {};
+    const { full_name, phone, address, notes } = req.body || {};
 
     // Get cart items
     const cartItems = await orderModel.findCartItemsForCheckout(connection, req.user.id);
@@ -46,16 +45,13 @@ const createOrder = async (req, res) => {
     // Calculate total
     const totalAmount = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-    if (full_name || phone || address) {
-      await userModel.updateProfileById(req.user.id, {
-        full_name,
-        phone,
-        address
-      });
-    }
-
     // Create order
-    const orderResult = await orderModel.createOrderRecord(connection, req.user.id, totalAmount, 'PENDING');
+    const orderResult = await orderModel.createOrderRecord(connection, req.user.id, totalAmount, 'PENDING', {
+      full_name,
+      phone,
+      address,
+      notes
+    });
     const orderId = orderResult.insertId;
 
     // Create order items + decrement stock
