@@ -3,7 +3,6 @@ const router = express.Router();
 const { body } = require('express-validator');
 const validate = require('../middlewares/validate');
 const { verifyToken, isAdmin } = require('../middlewares/auth');
-const bookingModel = require('../models/booking.model');
 
 // Controllers
 const { createBrand, updateBrand, deleteBrand } = require('../controllers/brand.controller');
@@ -19,7 +18,12 @@ const {
   updateUser,
   deleteUser,
   toggleUserStatus, 
-  getRevenueStats 
+  getRevenueStats,
+  getAllGarages,
+  createGarage,
+  updateGarage,
+  getAllBookings,
+  updateBookingStatus
 } = require('../controllers/admin.controller');
 const { getAllOrders, updateOrderStatus } = require('../controllers/order.controller');
 
@@ -151,26 +155,11 @@ router.put('/orders/:id/status', [
 ], updateOrderStatus);
 
 // Quản lý Gara
-router.get('/garages', verifyToken, isAdmin, async (req, res) => {
-    const garages = await bookingModel.getAllGarages(); // Tận dụng hàm cũ
-    res.json(garages);
-});
-router.post('/garages', verifyToken, isAdmin, async (req, res) => {
-    await bookingModel.createGarage(req.body);
-    res.json({ message: 'Thêm gara thành công' });
-});
-router.put('/garages/:id', verifyToken, isAdmin, async (req, res) => {
-    await bookingModel.updateGarage(req.params.id, req.body);
-    res.json({ message: 'Cập nhật thành công' });
-});
+router.get('/garages', verifyToken, isAdmin, getAllGarages);
+router.post('/garages', verifyToken, isAdmin, createGarage);
+router.put('/garages/:id', verifyToken, isAdmin, updateGarage);
 
 // Quản lý Lịch hẹn
-router.get('/bookings', verifyToken, isAdmin, async (req, res) => {
-    const bookings = await bookingModel.getAllBookings();
-    res.json(bookings);
-});
-router.patch('/bookings/:id/status', verifyToken, isAdmin, async (req, res) => {
-    await bookingModel.updateBookingStatus(req.params.id, req.body.status);
-    res.json({ message: 'Cập nhật trạng thái thành công' });
-});
+router.get('/bookings', verifyToken, isAdmin, getAllBookings);
+router.patch('/bookings/:id/status', verifyToken, isAdmin, updateBookingStatus);
 module.exports = router;
