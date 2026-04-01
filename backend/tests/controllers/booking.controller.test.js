@@ -43,13 +43,29 @@ const requestJson = (server, method, path, payload) => new Promise((resolve, rej
   req.end();
 });
 
+const createResponse = () => ({
+  statusCode: 200,
+  body: undefined,
+  status(code) {
+    this.statusCode = code;
+    return this;
+  },
+  json(payload) {
+    this.body = payload;
+    return this;
+  }
+});
+
 test('booking routes expose garage list and create booking contract', async (t) => {
-  let receivedCreatePayload;
-  const bookingModel = {
-    getAllGarages: async () => [{ id: 1, name: 'Garage A' }],
-    createBooking: async (payload) => {
-      receivedCreatePayload = payload;
-      return { insertId: 45 };
+  const bookingController = {
+    getAllGarages: async (req, res) => {
+      res.json([{ id: 1, name: 'Garage A' }]);
+    },
+    createBooking: async (req, res) => {
+      res.status(201).json({ message: 'Đặt lịch thành công', id: 45 });
+    },
+    getMyBookings: async (req, res) => {
+      res.json([]);
     }
   };
 
@@ -61,7 +77,7 @@ test('booking routes expose garage list and create booking contract', async (t) 
   };
 
   const router = loadWithMocks('../../routes/booking.routes.js', {
-    '../models/booking.model': bookingModel,
+    '../controllers/booking.controller': bookingController,
     '../middlewares/auth': auth
   });
 
@@ -82,6 +98,39 @@ test('booking routes expose garage list and create booking contract', async (t) 
     notes: 'Morning'
   });
 
+  assert.equal(createResponse.statusCode, 201);
+  assert.deepEqual(createResponse.json, {
+    message: 'Đặt lịch thành công',
+    id: 45
+  });
+});
+
+test('createBooking passes req.user.id and req.body to bookingModel.createBooking', async () => {
+  let receivedCreatePayload;
+  const bookingModel = {
+    createBooking: async (payload) => {
+      receivedCreatePayload = payload;
+      return { insertId: 45 };
+    },
+    getAllGarages: async () => [],
+    getUserBookings: async () => []
+  };
+
+  const { createBooking } = loadWithMocks('../../controllers/booking.controller.js', {
+    '../models/booking.model': bookingModel
+  });
+
+  const response = createResponse();
+  await createBooking({
+    user: { id: 99 },
+    body: {
+      orderId: 10,
+      garageId: 1,
+      bookingDate: '2026-01-01',
+      notes: 'Morning'
+    }
+  }, response);
+
   assert.deepEqual(receivedCreatePayload, {
     userId: 99,
     orderId: 10,
@@ -89,8 +138,8 @@ test('booking routes expose garage list and create booking contract', async (t) 
     bookingDate: '2026-01-01',
     notes: 'Morning'
   });
-  assert.equal(createResponse.statusCode, 201);
-  assert.deepEqual(createResponse.json, {
+  assert.equal(response.statusCode, 201);
+  assert.deepEqual(response.body, {
     message: 'Đặt lịch thành công',
     id: 45
   });
