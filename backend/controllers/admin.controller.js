@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs');
 const adminModel = require('../models/admin.model');
+const bookingModel = require('../models/booking.model');
 
 // ==================== DASHBOARD STATISTICS ====================
 
@@ -377,6 +378,31 @@ const getRevenueStats = async (req, res) => {
   }
 };
 
+const getAllGarages = async (req, res) => {
+  const garages = await bookingModel.getAllGarages();
+  res.json(garages);
+};
+
+const createGarage = async (req, res) => {
+  await bookingModel.createGarage(req.body);
+  res.json({ message: 'Thêm gara thành công' });
+};
+
+const updateGarage = async (req, res) => {
+  await bookingModel.updateGarage(req.params.id, req.body);
+  res.json({ message: 'Cập nhật thành công' });
+};
+
+const getAllBookings = async (req, res) => {
+  const bookings = await bookingModel.getAllBookings();
+  res.json(bookings);
+};
+
+const updateBookingStatus = async (req, res) => {
+  await bookingModel.updateBookingStatus(req.params.id, req.body.status);
+  res.json({ message: 'Cập nhật trạng thái thành công' });
+};
+
 module.exports = { 
   getDashboardStats,
   getDetailedStatistics,
@@ -385,5 +411,10 @@ module.exports = {
   updateUser,
   deleteUser,
   toggleUserStatus, 
-  getRevenueStats 
+  getRevenueStats,
+  getAllGarages,
+  createGarage,
+  updateGarage,
+  getAllBookings,
+  updateBookingStatus
 };
